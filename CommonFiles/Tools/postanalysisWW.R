@@ -77,7 +77,7 @@ ggplot(resultsagg)+
   scale_fill_manual(values =  rainbow(length(unique(resultsagg$clade))))+
   theme_minimal()+
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
-ggsave(paste(r.path, "Clade_Barplot.pdf"), width =   12, height = 12)
+ggsave(paste(r.path, "Clade_Barplot.pdf",sep=""), width =   12, height = 12)
 
 resultsagg<-aggregate(ratio~Nextclade_pango+Sample, results.out, sum)
 if(length(which(resultsagg$Nextclade_pango==""))>0) resultsagg$Nextclade_pango[which(resultsagg$Nextclade_pango=="")]<-"NA"
@@ -87,8 +87,8 @@ ggplot(resultsagg)+
   scale_fill_manual(values =  rainbow(length(unique(resultsagg$Nextclade_pango))))+
   theme_minimal()+
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
-ggsave(paste(r.path, "Pangolin_Barplot.pdf"), width =   12, height = 12)
-
+ggsave(paste(r.path, "Pangolin_Barplot.pdf",sep=""), width =   12, height = 12)
+write.csv(resultsagg, paste(r.path, "ResultsAggregated.csv",sep=""), row.names=FALSE )
 samples<-unique(results.out$Sample)
 sk.list<-list()
 

@@ -115,6 +115,7 @@ mv /Data/results/*noise.pdf /Data/results/QC
 mv /Data/results/*results.xlsx /Data/results/analysis/SurveillenceMode
 mv /Data/results/*Barplot.pdf /Data/results/analysis/SurveillenceMode
 mv /Data/results/*Sankeyplot*.pdf /Data/results/analysis/SurveillenceMode
+mv /Data/results/ResultsAggregated.csv /Data/results/analysis/SurveillenceMode
 mv /Data/results/Nextclade.results.csv /Data/results/analysis/SurveillenceMode/Variants.nextclade.csv
 rm /Data/results/Rplots.pdf
 #To be changed after adding fixed mode

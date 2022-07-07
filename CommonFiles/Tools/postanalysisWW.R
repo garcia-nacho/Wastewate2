@@ -1,7 +1,7 @@
 library(readxl)
 library(ggsankey)
 library(tidyverse)
-
+library(writexl)
 
 r.path<-"/Data/results/"
 
@@ -68,27 +68,29 @@ ggplot(results.to.plot)+
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))+
   ylab("Ratio")
 ggsave(paste(r.path, "Barplot.pdf"), width =   25, height = 12)
+agg.mut<-results.to.plot
 
 resultsagg<-aggregate(ratio~clade+Sample, results.out, sum)
 if(length(which(resultsagg$clade==""))>0) resultsagg$clade[which(resultsagg$clade=="")]<-"NA"
-
 ggplot(resultsagg)+
   geom_bar(aes(Sample, ratio, fill=clade),position = "stack", stat = "identity")+
   scale_fill_manual(values =  rainbow(length(unique(resultsagg$clade))))+
   theme_minimal()+
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
 ggsave(paste(r.path, "Clade_Barplot.pdf",sep=""), width =   12, height = 12)
+agg.clades<-resultsagg
 
 resultsagg<-aggregate(ratio~Nextclade_pango+Sample, results.out, sum)
 if(length(which(resultsagg$Nextclade_pango==""))>0) resultsagg$Nextclade_pango[which(resultsagg$Nextclade_pango=="")]<-"NA"
-
 ggplot(resultsagg)+
   geom_bar(aes(Sample, ratio, fill=Nextclade_pango),position = "stack", stat = "identity")+
   scale_fill_manual(values =  rainbow(length(unique(resultsagg$Nextclade_pango))))+
   theme_minimal()+
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
 ggsave(paste(r.path, "Pangolin_Barplot.pdf",sep=""), width =   12, height = 12)
-write.csv(resultsagg, paste(r.path, "ResultsAggregated.csv",sep=""), row.names=FALSE )
+
+write_xlsx(list("Mutations"=agg.mut, "Clades"=agg.clades, "NCPangolin"=resultsagg ),paste(r.path, "Results.Aggregated.xlsx",sep=""))
+
 samples<-unique(results.out$Sample)
 sk.list<-list()
 

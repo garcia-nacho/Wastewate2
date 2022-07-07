@@ -59,7 +59,8 @@ for (i in 1:length(samples.toplot)) {
   }else{
     dummy.out<-rbind(dummy.out,dummy)
   }
-  }
+}
+numberofreads<-aggregate(count~Sample, results.out, sum )
 results.to.plot<-rbind(results.to.plot,dummy.out)
 ggplot(results.to.plot)+
   geom_bar(aes(Sample, ratio, fill=Mutations),position = "stack", stat = "identity")+
@@ -70,6 +71,9 @@ ggplot(results.to.plot)+
 ggsave(paste(r.path, "Barplot.pdf"), width =   25, height = 12)
 agg.mut<-results.to.plot
 
+agg.mut<-merge(results.to.plot, numberofreads, by="Sample")
+agg.mut$count<-agg.mut$count*agg.mut$ratio
+
 resultsagg<-aggregate(ratio~clade+Sample, results.out, sum)
 if(length(which(resultsagg$clade==""))>0) resultsagg$clade[which(resultsagg$clade=="")]<-"NA"
 ggplot(resultsagg)+
@@ -79,6 +83,8 @@ ggplot(resultsagg)+
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
 ggsave(paste(r.path, "Clade_Barplot.pdf",sep=""), width =   12, height = 12)
 agg.clades<-resultsagg
+agg.clades<-merge(agg.clades, numberofreads, by="Sample")
+agg.clades$count<-agg.clades$count*agg.clades$ratio
 
 resultsagg<-aggregate(ratio~Nextclade_pango+Sample, results.out, sum)
 if(length(which(resultsagg$Nextclade_pango==""))>0) resultsagg$Nextclade_pango[which(resultsagg$Nextclade_pango=="")]<-"NA"
@@ -89,6 +95,8 @@ ggplot(resultsagg)+
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
 ggsave(paste(r.path, "Pangolin_Barplot.pdf",sep=""), width =   12, height = 12)
 
+resultsagg<-merge(resultsagg, numberofreads, by="Sample")
+resultsagg$count<-resultsagg$count*resultsagg$ratio
 write_xlsx(list("Mutations"=agg.mut, "Clades"=agg.clades, "NCPangolin"=resultsagg ),paste(r.path, "Results.Aggregated.xlsx",sep=""))
 
 samples<-unique(results.out$Sample)

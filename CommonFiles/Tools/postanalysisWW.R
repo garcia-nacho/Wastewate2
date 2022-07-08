@@ -102,130 +102,139 @@ write_xlsx(list("Mutations"=agg.mut, "Clades"=agg.clades, "NCPangolin"=resultsag
 samples<-unique(results.out$Sample)
 sk.list<-list()
 
-for (sk in 1:length(samples)) {
-  
-  df<-results.out[which(results.out$Sample==samples[sk]),]
-  
-  df<-df[order(df$count, decreasing = TRUE),]
-  try(rm(out))
-  for (i in 1:min(nrow(df),20)) {
-    try(rm(mutpos.df))
-    if(df$aaSubstitutions[i]!=""){
-    mutations<-unlist(base::strsplit(df$aaSubstitutions[i], ","))
-    mutpos<- gsub("S:.","",gsub(".$","",mutations))
-    
-    mutpos.df<-as.data.frame(t(mutations))
-    colnames(mutpos.df)<-mutpos
-    }
-    try(rm(delpos))
-    if(!is.na(df$ImputedDeletions[i])){
-      deletions<-unlist(base::strsplit(df$ImputedDeletions[i], ","))
-      delpos<- gsub("S:","",gsub("-$","",deletions))
-      delpos.df<-as.data.frame(t(deletions))
-      colnames(delpos.df)<-delpos
-      if(exists("mutpos.df")) mutpos.df<-cbind(mutpos.df, delpos.df)
-      if(!exists("mutpos.df")) mutpos.df<-delpos.df
-    }
 
-    if(df$aaSubstitutions[i]=="" & is.na(df$ImputedDeletions[i])){
-      mutpos.df<-as.data.frame(matrix("Ref", nrow = 1, ncol = 1))
-      colnames(mutpos.df)<-"Dummy"
-    }
-    if(length(grep("-",mutpos.df[1,]))>0)mutpos.df<-mutpos.df[,-grep("-", mutpos.df[1,]),drop=FALSE]
+for(s.method in c("Unique","Total")){
+  for (sk in 1:length(samples)) {
     
-    mutpos.df<-mutpos.df[round(rep(1,df$count[i])),,drop(FALSE)]
+    df<-results.out[which(results.out$Sample==samples[sk]),]
     
-    
-
-
-    
-    if(!exists("out")){
-      out<-mutpos.df
-    }else{
-      
-      if(length(which(colnames(mutpos.df) %in% colnames(out)))>0){
-        missing.out<- colnames(mutpos.df)[-which(colnames(mutpos.df) %in% colnames(out))]
-      }else{
-        missing.out<- colnames(mutpos.df)
+    df<-df[order(df$count, decreasing = TRUE),]
+    try(rm(out))
+    for (i in 1:min(nrow(df),20)) {
+      try(rm(mutpos.df))
+      if(df$aaSubstitutions[i]!=""){
+        mutations<-unlist(base::strsplit(df$aaSubstitutions[i], ","))
+        mutpos<- gsub("S:.","",gsub(".$","",mutations))
+        
+        mutpos.df<-as.data.frame(t(mutations))
+        colnames(mutpos.df)<-mutpos
+      }
+      try(rm(delpos))
+      if(!is.na(df$ImputedDeletions[i])){
+        deletions<-unlist(base::strsplit(df$ImputedDeletions[i], ","))
+        delpos<- gsub("S:","",gsub("-$","",deletions))
+        delpos.df<-as.data.frame(t(deletions))
+        colnames(delpos.df)<-delpos
+        if(exists("mutpos.df")) mutpos.df<-cbind(mutpos.df, delpos.df)
+        if(!exists("mutpos.df")) mutpos.df<-delpos.df
       }
       
-      if(length(which(colnames(out) %in% colnames(mutpos.df)))>0){
-        missing.df<- colnames(out)[-which(colnames(out) %in% colnames(mutpos.df))]
-      }else{
-        missing.df<- colnames(out)
+      if(df$aaSubstitutions[i]=="" & is.na(df$ImputedDeletions[i])){
+        mutpos.df<-as.data.frame(matrix("Ref", nrow = 1, ncol = 1))
+        colnames(mutpos.df)<-"Dummy"
       }
-                
-
-      # 
-      # if(length(missing.out)==0 & length(missing.df)==0){
-      #   pad.out<-as.data.frame(matrix(data = "Ref", nrow = nrow(out), ncol = ncol(mutpos.df)))
-      #   colnames(pad.out)<-colnames(mutpos.df)
-      #   outnew<-cbind(out, pad.out)
-      #   
-      #   pad.df<-as.data.frame(matrix(data = "Ref", nrow = nrow(mutpos.df), ncol = ncol(out))) 
-      #   colnames(pad.df)<-colnames(out)
-      #   mutpos.df<- cbind(mutpos.df, pad.df)
-      #   out<-outnew
-      # }
-      # 
-      if(length(missing.out)>0){
-        pad.out<-as.data.frame(matrix(data = "Ref", nrow = nrow(out), ncol = length(missing.out)))
-        colnames(pad.out)<-missing.out
-        out<-cbind(out, pad.out)
+      if(length(grep("-",mutpos.df[1,]))>0)mutpos.df<-mutpos.df[,-grep("-", mutpos.df[1,]),drop=FALSE]
+      
+      mutpos.df<-mutpos.df[round(rep(1,df$count[i])),,drop(FALSE)]
+      
+      
+      
+      
+      
+      if(!exists("out")){
+        out<-mutpos.df
+      }else{
+        
+        if(length(which(colnames(mutpos.df) %in% colnames(out)))>0){
+          missing.out<- colnames(mutpos.df)[-which(colnames(mutpos.df) %in% colnames(out))]
+        }else{
+          missing.out<- colnames(mutpos.df)
         }
-      
-      if(length(missing.df)>0){
-        pad.df<-as.data.frame(matrix(data = "Ref", nrow = nrow(mutpos.df), ncol = length(missing.df))) 
-        colnames(pad.df)<-missing.df
-        mutpos.df<- cbind(mutpos.df, pad.df)
+        
+        if(length(which(colnames(out) %in% colnames(mutpos.df)))>0){
+          missing.df<- colnames(out)[-which(colnames(out) %in% colnames(mutpos.df))]
+        }else{
+          missing.df<- colnames(out)
+        }
+        
+        
+        # 
+        # if(length(missing.out)==0 & length(missing.df)==0){
+        #   pad.out<-as.data.frame(matrix(data = "Ref", nrow = nrow(out), ncol = ncol(mutpos.df)))
+        #   colnames(pad.out)<-colnames(mutpos.df)
+        #   outnew<-cbind(out, pad.out)
+        #   
+        #   pad.df<-as.data.frame(matrix(data = "Ref", nrow = nrow(mutpos.df), ncol = ncol(out))) 
+        #   colnames(pad.df)<-colnames(out)
+        #   mutpos.df<- cbind(mutpos.df, pad.df)
+        #   out<-outnew
+        # }
+        # 
+        if(length(missing.out)>0){
+          pad.out<-as.data.frame(matrix(data = "Ref", nrow = nrow(out), ncol = length(missing.out)))
+          colnames(pad.out)<-missing.out
+          out<-cbind(out, pad.out)
+        }
+        
+        if(length(missing.df)>0){
+          pad.df<-as.data.frame(matrix(data = "Ref", nrow = nrow(mutpos.df), ncol = length(missing.df))) 
+          colnames(pad.df)<-missing.df
+          mutpos.df<- cbind(mutpos.df, pad.df)
+        }
+        
+        out<-rbind(out, mutpos.df)  
       }
       
-      out<-rbind(out, mutpos.df)  
     }
     
-  }
-  
-  try(out$Dummy<-NULL)
-  
-  
-  df.sankey <- make_long(out, colnames(out))
-
-  ggplot(df.sankey, aes(x = x, 
-                        next_x = next_x, 
-                        node = node, 
-                        next_node = next_node,
-                        fill = factor(node))) +
-    geom_sankey(flow.alpha = 0.5, node.color = 1) +
-    scale_fill_viridis_d(option = "A", alpha = 0.5) +
-    theme_sankey(base_size = 16)+
-    xlab("Position")+
-    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))+
-    ggtitle(paste("Mutation combinations in", samples[sk]))+
-    labs(fill = "Mutations")
-  ggsave(paste(r.path, samples[sk],"_Sankeyplot.AA.pdf"), width =   20, height = 10)
-  
-  out.clean<-out[,-which(apply(out, 2, function(x) length(grep("-",x)))>0),drop=FALSE] 
-  
-  if(ncol(out.clean)>0){
-    df.sankey2 <- make_long(out.clean, colnames(out.clean))
+    try(out$Dummy<-NULL)
+    if(s.method=="Unique"){
+      c.to.remove<- apply(out,2,function(x)length(unique(x)))
+      out<-out[,-which(c.to.remove==1), drop=FALSE]
+    }
     
-    ggplot(df.sankey2, aes(x = x, 
-                          next_x = next_x, 
-                          node = node, 
-                          next_node = next_node,
-                          fill = factor(node))) +
-      geom_sankey(flow.alpha = 0.5, node.color = 1) +
-      scale_fill_viridis_d(option = "A", alpha = 0.5) +
-      theme_sankey(base_size = 16)+
-      xlab("Position")+
-      theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))+
-      ggtitle(paste("Mutation combinations in", samples[sk]))+
-      labs(fill = "Mutations")
-    ggsave(paste(r.path, samples[sk],"_SankeyplotNoDel.AA.pdf"), width =   20, height = 10)
-    
+    if(ncol(out)>0){
+      df.sankey <- make_long(out, colnames(out))
+      
+      ggplot(df.sankey, aes(x = x, 
+                            next_x = next_x, 
+                            node = node, 
+                            next_node = next_node,
+                            fill = factor(node))) +
+        geom_sankey(flow.alpha = 0.5, node.color = 1) +
+        scale_fill_viridis_d(option = "A", alpha = 0.5) +
+        theme_sankey(base_size = 16)+
+        xlab("Position")+
+        theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))+
+        ggtitle(paste("Mutation combinations in", samples[sk]))+
+        labs(fill = "Mutations")
+      ggsave(paste(r.path, samples[sk],"_Sankeyplot",s.method,".AA.pdf",sep = ""), width =   20, height = 10)
+      
+      out.clean<-out[,-which(apply(out, 2, function(x) length(grep("-",x)))>0),drop=FALSE] 
+      
+      if(ncol(out.clean)>0){
+        df.sankey2 <- make_long(out.clean, colnames(out.clean))
+        
+        ggplot(df.sankey2, aes(x = x, 
+                               next_x = next_x, 
+                               node = node, 
+                               next_node = next_node,
+                               fill = factor(node))) +
+          geom_sankey(flow.alpha = 0.5, node.color = 1) +
+          scale_fill_viridis_d(option = "A", alpha = 0.5) +
+          theme_sankey(base_size = 16)+
+          xlab("Position")+
+          theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))+
+          ggtitle(paste("Mutation combinations in", samples[sk]))+
+          labs(fill = "Mutations")
+        ggsave(paste(r.path, samples[sk],"_SankeyplotNoDel",s.method,".AA.pdf",sep = ""), width =   20, height = 10)
+        
+      }
+    }
   }
-
 }
+
+
 
 
 samples<-unique(results.out$Sample)
@@ -309,9 +318,9 @@ for (sk in 1:length(samples)) {
   
   try(out$Dummy<-NULL)
   
-  out<-out[,-which(apply(out,2, function(x) length(unique(x))) ==1)]
+  out<-out[,-which(apply(out,2, function(x) length(unique(x))) ==1), drop=FALSE]
   
-  
+  if(ncol(out)>0){
   df.sankey <- make_long(out, colnames(out))
   
   ggplot(df.sankey, aes(x = x, 
@@ -329,5 +338,5 @@ for (sk in 1:length(samples)) {
   ggsave(paste(r.path, samples[sk],"_Sankeyplot.Nucleotide.pdf"), width =   40, height = 20)
   
   out.clean<-out[,-which(apply(out, 2, function(x) length(grep("-",x)))>0),drop=FALSE] 
-  
+  }
 }

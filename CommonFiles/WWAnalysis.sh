@@ -11,7 +11,7 @@ echo -e "    ________  _______                                                  
 
 echo "Quality:"${1}"/Noise Cutoff:"${2}
 echo "Analyzing Spike gene from "${3}" to "${4}
-echo "Read size between"${5}" and "${6}
+echo "Read size between "${5}" and "${6}
 echo -e "Quality, noise, read size and region to analyze can be set using these flags: \n -e qual=Q, -e noise=N, -e m=min, -e M=max -e start=S, -e end=E"
 sleep 3s
 
@@ -46,7 +46,7 @@ do
 
     if [[ ${numberoffiles} > 1  || ${SKIP} == "FALSE" ]] 
     then
-    echo "Processing "${numberoffiles}"fastq.gz files in"${dir}
+    echo "Processing "${numberoffiles}" fastq.gz files in "${dir}
 
     cd ${dir}
 	  Reads=$(ls *.fastq.gz)
@@ -59,7 +59,10 @@ do
     minimap2 --secondary=no -ax map-ont ${RefSpike} ${dir%/}.filtered.fastq > ${dir%/}.sam  
     samtools view -F 1024 -F 256 -F4 -F 2048 -bS ${dir%/}.sam | samtools sort -o ${dir%/}.sorted.bam
     samtools index ${dir%/}.sorted.bam
-    samtools mpileup -aa -A -d 0 -Q 0 --reference ${RefSpike} ${dir%/}.sorted.bam | ivar consensus -t 0 -n N -m 20 -p ${dir%/}_consensus 
+    #samtools mpileup -aa -A -d 0 -Q 0 --reference ${RefSpike} ./${dir%/}.sorted.bam | ivar consensus -t 0 -n N -m 20 -p ${dir%/}_consensus 
+    ls
+    samtools mpileup -aa -A -d 0 -q 0 --reference ${RefSpike} ./${dir%/}.sorted.bam | ivar consensus -t 0 -n N -m 20 -p ${dir%/}_consensus
+
     rm ${dir%/}.sam
     rm ${dir%/}.filtered.fastq
     ${Tools}/FINex2 -f ${dir%/}.sorted.bam > ${dir%/}.noise.tsv 

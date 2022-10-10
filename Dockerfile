@@ -31,6 +31,8 @@ RUN Rscript -e "install.packages(c('doSNOW', \
 RUN Rscript -e "devtools::install_github('davidsjoberg/ggsankey')"
 ENV start=1250
 ENV end=2250
+ENV M=1300
+ENV m=500
 USER root
 RUN mkdir -p /Data /home/docker/CommonFiles
 COPY CommonFiles/ /home/docker/CommonFiles/
@@ -38,4 +40,4 @@ RUN chmod -R +rwx /home/docker/CommonFiles/* \
     && chmod 777 /Data 
 USER docker
 WORKDIR /Data
-CMD ["sh", "-c", "/home/docker/CommonFiles/WWAnalysis.sh ${qual} ${noise} ${start} ${end}"]
+CMD ["sh", "-c", "/home/docker/CommonFiles/WWAnalysis.sh ${qual} ${noise} ${start} ${end} ${m} ${M}"]

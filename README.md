@@ -25,6 +25,9 @@ To change the default noise cut-off (0.15) use the flag *-e noise*. E.g:
 To change the region to analyze (default 1250-2250 by default) use the flags *-e start* and *-e end*. E.g:    
 <code>docker run -it --rm -e start=1000 -e end=2000 -v $(pwd):/Data wastewater </code>
 
+To change the read size (default between 500-1300bp by default) use the flags *-e m* and *-e M*. E.g:    
+<code>docker run -it --rm -e m=100 -e M=500 -v $(pwd):/Data wastewater </code>
+
 The script must be run in a folder with the following structure:
 
 <pre>

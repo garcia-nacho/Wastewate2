@@ -11,7 +11,8 @@ echo -e "    ________  _______                                                  
 
 echo "Quality:"${1}"/Noise Cutoff:"${2}
 echo "Analyzing Spike gene from "${3}" to "${4}
-echo -e "Quality, noise, and region to analyze can be set using these flags: \n -e qual=Q, -e noise=N, -e start=S, -e end=E"
+echo "Read size between"${5}" and "${6}
+echo -e "Quality, noise, read size and region to analyze can be set using these flags: \n -e qual=Q, -e noise=N, -e m=min, -e M=max -e start=S, -e end=E"
 sleep 3s
 
 RefBowtie2=/home/docker/CommonFiles/reference/SpikeSars-CoV-2
@@ -51,7 +52,7 @@ do
 	  Reads=$(ls *.fastq.gz)
     cat ${Reads} > ${dir%/}.fastq.gz
     gzip -d ${dir%/}.fastq.gz
-    seqkit seq ${dir%/}.fastq -M 1300 -m 500 -Q ${1} > ${dir%/}.filtered.fastq
+    seqkit seq ${dir%/}.fastq -M ${6} -m ${5} -Q ${1} > ${dir%/}.filtered.fastq
     rm ${dir%/}.fastq
     #(bowtie2 -p 8 -x ${RefBowtie2} -U ${dir%/}.fastq -S ${dir%/}.sam) 2> ${dir%/}_Bowtie2summary.txt
     #(tanoti -r ${RefSpike} -i ${dir%/}.fastq -o ${dir%/}.sam -u) 2> Tanoti_${dir%/}.summary.txt

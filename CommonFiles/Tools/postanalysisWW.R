@@ -15,9 +15,10 @@ colnames(dummync)[1]<-"variantID"
 dummync$variantID<-gsub("ID-","", dummync$variantID)
 if(length(which(duplicated(dummync)))>0 ) dummync<-dummync[-which(duplicated(dummync)),]
 
-try(rm(results.out))
+if(exists("results.out"))try(rm(results.out))
 for (i in 1:length(excels)) {
   dummy<-read_xlsx(excels[i])
+  if(nrow(dummy)>0){
   dummy<- merge(dummy, dummync[,c("variantID", "clade","Nextclade_pango", "aaSubstitutions","substitutions")], by ="variantID", all.x = TRUE)
   samplename<-gsub("\\..*","",gsub(".*/","",excels[i]))
   dummy$Sample<-samplename
@@ -38,6 +39,7 @@ for (i in 1:length(excels)) {
   }else{
     results.out<-rbind(results.out, dummy[,c( "variantID" ,  "count","ratio",  "clade","Nextclade_pango","aaSubstitutions","Sample","ImputedDeletions","substitutions")])
   }
+  }
 }
 
 
@@ -48,7 +50,7 @@ if(length(which(results.out$Mutations==""))>0) results.out$Mutations[which(resul
 
 results.to.plot<-results.out[which(results.out$ratio>0.015),c("Sample", "Mutations", "ratio")]
 samples.toplot<-unique(results.to.plot$Sample)
-try(rm(dummy.out))
+if(exists("dummy.out"))try(rm(dummy.out))
 for (i in 1:length(samples.toplot)) {
   dummy<-results.to.plot[1,,drop=FALSE]
   dummy$Sample<-samples.toplot[i]

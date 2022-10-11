@@ -20,7 +20,8 @@ sampleid<-gsub("\\.noise.tsv","",gsub(".*/","",noise.path))
 bam.path<-list.files(path, pattern = ".*bam$",full.names = TRUE)
 ref.path<-paste(path,"spike.cons.aligned.fa",sep = "")
 cores<-as.numeric(detectCores())-2
-
+poi.co<-  (n.end-n.start)*0.02
+  
 allpos<-TRUE
 
 noise.table<-read.csv(noise.path, sep = "\t", header = FALSE)
@@ -44,7 +45,11 @@ poi<-noise.table$V1[which(noise.table$V2>co.n & noise.table$V1>n.start & noise.t
 
 if(length(poi)>0){
   
-if(length(poi)>40)poi<-noise.table$V1[order(noise.table$V2, decreasing=TRUE)][1:40]
+if(length(poi)>poi.co){
+  poi<-noise.table$V1[order(noise.table$V2, decreasing=TRUE)][1:round(poi.co)]
+  
+  }
+
 samples.to.analyze<-poi
 
 pb <- progress_bar$new(
@@ -80,7 +85,7 @@ position.files<-position.files[c(top.noise, c(1:length(position.files))[-top.noi
 
 pb<-txtProgressBar(min = 0, max = length(position.files), initial = 1)
 print("Getting the reads for the positions of interest")
-try(rm(out))
+if(exists("out")) try(rm(out))
 for (i in 1:length(position.files)) {
   setTxtProgressBar(pb,i)
   dummy<-fread(position.files[i],sep = "\t", header = FALSE)
@@ -112,11 +117,12 @@ for (i in 1:length(position.files)) {
 close(pb)
 
 #Removing problematic reads
+out<-as.data.frame(out)
 col.to.remove<-which(apply(out[,-1],2,function(x)length(which(is.na(x))))> nrow(out)*0.7 )
-if(length(col.to.remove)>0) out<-out[,-col.to.remove]
+if(length(col.to.remove)>0) out<-out[,-which(colnames(out) %in% names(col.to.remove))]
 
 file.remove(position.files)
-out<-as.data.frame(out)
+
 
 index.c<-vector()
 for (c in 2:ncol(out)) {
@@ -145,7 +151,7 @@ variantable<-variantable[which(variantable$Freq>read.co),]
 if(length(grep("//", variantable$Var1))) variantable<-variantable[-grep("//", variantable$Var1),]
 if(allpos & length(grep("NA", variantable$Var1))>0)variantable<-variantable[-grep("NA", variantable$Var1),]
 
-try(rm(variant.out))
+if(exists("variant.out")) try(rm(variant.out))
 for (i in 1:nrow(variantable)) {
   dum<-out[which(out$variant==variantable$Var1[i])[1],-1]
   dum$variantID<- paste(sampleid,"-", paste(unlist(base::strsplit(out$varianthash[which(out$variant==variantable$Var1[i])[1]],""))[1:12],collapse = "") ,sep = "")

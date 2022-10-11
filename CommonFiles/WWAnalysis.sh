@@ -72,6 +72,7 @@ do
     source activate nextclade
     nextclade --input-fasta spike.cons.fa --input-dataset /home/docker/nc_sars-cov-2 --output-csv dummy.csv --output-fasta spike.cons.aligned.fa
     conda deactivate
+    #nextalign -i spike.cons.fa -o spike.cons.aligned.fa -r /home/docker/CommonFiles/reference/SpikeRef.fa
 
     Rscript ${Tools}/AnalysisWW.R $(pwd)/ ${2} ${3} ${4}
     #Rscript ${Tools}/AnalysisFixedWW.R $(pwd)/

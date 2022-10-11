@@ -20,7 +20,7 @@ sampleid<-gsub("\\.noise.tsv","",gsub(".*/","",noise.path))
 bam.path<-list.files(path, pattern = ".*bam$",full.names = TRUE)
 ref.path<-paste(path,"spike.cons.aligned.fa",sep = "")
 cores<-as.numeric(detectCores())-2
-read.co<-30
+
 allpos<-TRUE
 
 noise.table<-read.csv(noise.path, sep = "\t", header = FALSE)
@@ -137,6 +137,9 @@ out$variant<-apply(out[,grep("P_", colnames(out))], 1, paste, collapse="/")
 out$varianthash<-apply(out[,grep("P_", colnames(out))], 1, function(x) digest(paste(x, collapse = "/"), algo = "md5"))
 
 variantable<-as.data.frame(table(out$variant))
+
+read.co<-sum(variantable$Freq)/50
+
 variantable<-variantable[which(variantable$Freq>read.co),]
 
 if(length(grep("//", variantable$Var1))) variantable<-variantable[-grep("//", variantable$Var1),]

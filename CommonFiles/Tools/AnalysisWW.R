@@ -42,12 +42,11 @@ ggplot(noise.table)+
 ggsave(paste(path, "Coverage.pdf",sep = ""))
 
 poi<-noise.table$V1[which(noise.table$V2>co.n & noise.table$V1>n.start & noise.table$V1<n.end & noise.table$V3>20)]
-
+poit<-noise.table[which(noise.table$V2>co.n & noise.table$V1>n.start & noise.table$V1<n.end & noise.table$V3>20),]
 if(length(poi)>0){
   
 if(length(poi)>poi.co){
-  poi<-noise.table$V1[order(noise.table$V2, decreasing=TRUE)][1:round(poi.co)]
-  
+  poi<-poit$V1[order(poit$V2, decreasing=TRUE)][1:round(poi.co)]
   }
 
 samples.to.analyze<-poi

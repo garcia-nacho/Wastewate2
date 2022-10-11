@@ -74,7 +74,7 @@ stopCluster(cluster.cores)
 
 position.files<-list.files(path, full.names = TRUE, pattern = "_P.*\\.tsv")
 
-top.noise<-grep(paste("_P",noise.table$V1[which(noise.table$V2== max(noise.table$V2[which(noise.table$V1 %in% poi)]))],".tsv",sep = ""), position.files)
+top.noise<-grep(paste("_P",noise.table$V1[which(noise.table$V3>20 & noise.table$V2== max(noise.table$V2[which(noise.table$V1 %in% poi)]))],".tsv",sep = ""), position.files)
 
 position.files<-position.files[c(top.noise, c(1:length(position.files))[-top.noise])]
 
@@ -125,7 +125,7 @@ for (c in 2:ncol(out)) {
 }
 
 if(length(index.c)>0) out<-out[,-index.c]
-out<-out[-unique(which(is.na(out), arr.ind = TRUE)[,1]),]
+if(length(which(is.na(out)))>0) out<-out[-unique(which(is.na(out), arr.ind = TRUE)[,1]),]
 
 print("Finding variants")
 

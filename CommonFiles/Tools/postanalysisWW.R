@@ -16,6 +16,11 @@ dummync$variantID<-gsub("ID-","", dummync$variantID)
 if(length(which(duplicated(dummync)))>0 ) dummync<-dummync[-which(duplicated(dummync)),]
 
 if(exists("results.out"))try(rm(results.out))
+
+if(length(grep("dependent",excels))>0){
+  excels<-excels[grep("dependent",excels)]
+}
+
 for (i in 1:length(excels)) {
   dummy<-read_xlsx(excels[i])
   if(nrow(dummy)>0){
@@ -247,7 +252,7 @@ for (sk in 1:length(samples)) {
   df<-results.out[which(results.out$Sample==samples[sk]),]
   
   df<-df[order(df$count, decreasing = TRUE),]
-  try(rm(out))
+  if(exists("out"))try(rm(out))
   for (i in 1:min(nrow(df),20)) {
     try(rm(mutpos.df))
     if(df$substitutions[i]!=""){
@@ -264,7 +269,10 @@ for (sk in 1:length(samples)) {
       mutpos.df<-as.data.frame(matrix("Ref", nrow = 1, ncol = 1))
       colnames(mutpos.df)<-"Dummy"
     }
-    if(length(grep("-",mutpos.df[1,]))>0)mutpos.df<-mutpos.df[,-grep("-", mutpos.df[1,]),drop=FALSE]
+    
+    if(exists("mutpos.df")){
+    
+    if(length(grep("-",mutpos.df[1,]))>0) mutpos.df<-mutpos.df[,-grep("-", mutpos.df[1,]),drop=FALSE]
     
     mutpos.df<-mutpos.df[round(rep(1,df$count[i])),,drop(FALSE)]
     
@@ -315,7 +323,7 @@ for (sk in 1:length(samples)) {
       
       out<-rbind(out, mutpos.df)  
     }
-    
+    }
   }
   
   try(out$Dummy<-NULL)

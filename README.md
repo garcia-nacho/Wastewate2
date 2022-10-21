@@ -1,7 +1,7 @@
 # Wastewater SARS-CoV-2 Surveillance Pipeline
 [![Linux](https://svgshare.com/i/Zhy.svg)](https://svgshare.com/i/Zhy.svg)   [![Docker](https://badgen.net/badge/icon/docker?icon=docker&label)](https://https://docker.com/)
 
-SARS-CoV-2 wastewater surveillance using long reads (Tested with Nanopore).
+SARS-CoV-2 wastewater surveillance using long reads (Tested with Nanopore). Version 1.2
 
 ## Introduction
 This pipeline identifies and quantifies SARS-CoV-2 lineages at the read-level.   
@@ -26,7 +26,9 @@ To change the region to analyze (default 1250-2250 by default) use the flags *-e
 <code>docker run -it --rm -e start=1000 -e end=2000 -v $(pwd):/Data wastewater </code>
 
 To change the read size (default between 500-1300bp by default) use the flags *-e m* and *-e M*. E.g:    
-<code>docker run -it --rm -e m=100 -e M=500 -v $(pwd):/Data wastewater </code>
+<code>docker run -it --rm -e m=100 -e M=500 -v $(pwd):/Data wastewater </code>   
+
+There are two modes to run the pipeline. Dependent or independent (default). When the pipeline runs in independent mode (-e mode=i), each sample with be analyzed idependently of the rest of the samples. That means that some sites might not be analyzed for all the samples. This mode is more sentitive to detect variants in the samples. When the pipeline runs in dependent mode (-e mode=d), the sites that vary more on the entire set of samples is analyzed. This more is more convenient to detect changes in the dataset and the for all samples will be comparable, since all of them will have the same sites analyzed.    
 
 The script must be run in a folder with the following structure:
 

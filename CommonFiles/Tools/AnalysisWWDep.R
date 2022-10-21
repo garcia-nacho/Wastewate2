@@ -15,39 +15,19 @@ co.n<-as.numeric(path[2])
 n.start<-as.numeric(path[3])
 n.end<- as.numeric(path[4])
 path<-path[1]
-noise.path<-list.files(path, pattern = ".*noise.tsv",full.names = TRUE)
-sampleid<-gsub("\\.noise.tsv","",gsub(".*/","",noise.path))
+
+poi<-read.csv("poi.temp")
+poi<-poi$x
 bam.path<-list.files(path, pattern = ".*bam$",full.names = TRUE)
 ref.path<-paste(path,"spike.cons.aligned.fa",sep = "")
 cores<-as.numeric(detectCores())-2
-poi.co<-  (n.end-n.start)*0.03
-  
+noise.path<-list.files(path, pattern = ".*noise.tsv",full.names = TRUE)
+noise.table<-read.csv(noise.path, sep = "\t", header = FALSE)
+sampleid<-gsub("\\.noise.tsv","",gsub(".*/","",noise.path))
+
 allpos<-TRUE
 
-noise.table<-read.csv(noise.path, sep = "\t", header = FALSE)
-
-ggplot(noise.table)+
-  geom_line(aes(V1,V2))+
-  xlab("Position")+
-  ylab("Noise")+
-  geom_hline(yintercept=co.n, linetype='dotted', col = 'red')+
-  theme_minimal()
-ggsave(paste(path, "Noise.pdf",sep = ""))
-
-ggplot(noise.table)+
-  geom_line(aes(V1,V3))+
-  xlab("Position")+
-  ylab("Depth")+
-  theme_minimal()
-ggsave(paste(path, "Coverage.pdf",sep = ""))
-
-poi<-noise.table$V1[which(noise.table$V2>co.n & noise.table$V1>n.start & noise.table$V1<n.end & noise.table$V3>20)]
-poit<-noise.table[which(noise.table$V2>co.n & noise.table$V1>n.start & noise.table$V1<n.end & noise.table$V3>20),]
 if(length(poi)>0){
-  
-if(length(poi)>poi.co){
-  poi<-poit$V1[order(poit$V2, decreasing=TRUE)][1:round(poi.co)]
-  }
 
 samples.to.analyze<-poi
 
@@ -78,16 +58,16 @@ stopCluster(cluster.cores)
 
 position.files<-list.files(path, full.names = TRUE, pattern = "_P.*\\.tsv")
 
-top.noise<-grep(paste("_P",noise.table$V1[which(noise.table$V3>20 & noise.table$V2== max(noise.table$V2[which(noise.table$V1 %in% poi)]))],".tsv",sep = ""), position.files)
+#top.noise<-grep(paste("_P",noise.table$V1[which(noise.table$V3>20 & noise.table$V2== max(noise.table$V2[which(noise.table$V1 %in% poi)]))],".tsv",sep = ""), position.files)
+top.noise<-grep(paste("_P",noise.table$V1[which(noise.table$V1 %in% poi & noise.table$V2== max(noise.table$V2[which(noise.table$V1 %in% poi)]))],".tsv",sep = ""), position.files)
 
 position.files<-position.files[c(top.noise, c(1:length(position.files))[-top.noise])]
 
+pb<-txtProgressBar(min = 0, max = length(position.files), initial = 1)
 print("Getting the reads for the positions of interest")
-pb2<-txtProgressBar(min = 0, max = length(position.files), initial = 1)
-
 if(exists("out")) try(rm(out))
 for (i in 1:length(position.files)) {
-  setTxtProgressBar(pb2,i)
+  setTxtProgressBar(pb,i)
   dummy<-fread(position.files[i],sep = "\t", header = FALSE)
   
   if(nrow(dummy)>0){
@@ -114,7 +94,7 @@ for (i in 1:length(position.files)) {
 }
 
 
-
+close(pb)
 
 #Removing problematic reads
 out<-as.data.frame(out)
@@ -192,7 +172,7 @@ variant.out<-pure.variants
 variant.out$variant<-NULL
 variant.out$varianthash<-NULL
 variant.out$ratio<- variant.out$count/sum(variant.out$count)
-write_xlsx(variant.out, paste(path,"VariantResults.xlsx", sep = ""))
+write_xlsx(variant.out, paste(path,"VariantResultsDependent.xlsx", sep = ""))
 
 
 refspike<-read.fasta(ref.path)
@@ -203,13 +183,13 @@ consensus<-consensus[21563:25384]
 reference<-reference[21563:25384]
 consensus[which(consensus=="n")]<-reference[which(consensus=="n")]
 
-pb3<-txtProgressBar(min = 0, max = nrow(variant.out),initial = 1)
+pb<-txtProgressBar(min = 0, max = nrow(variant.out),initial = 1)
 
 refspike<-refspike[-which(names(refspike)=="Spike")]
 names(refspike)<-gsub("_consensus.*","",names(refspike))
 refspike[[1]]<-consensus
 for (i in 1:nrow(variant.out)) {
-  setTxtProgressBar(pb3,i)
+  setTxtProgressBar(pb,i)
   positions<-as.numeric(gsub("P_","",colnames(variant.out)[grep("P_", colnames(variant.out))]))
   dummy<-consensus
   dummy[positions]<-as.character(variant.out[i,grep("P_", colnames(variant.out))])
@@ -222,5 +202,5 @@ for (i in 1:nrow(variant.out)) {
   names(refspike)[length(refspike)]<-paste("ID-",variant.out$variantID[i],sep = "")
 }
 if(length(which(refspike[[1]]=="-"))>0)refspike[[1]]<-refspike[[1]][-which(refspike[[1]]=="-")]
-write.fasta(refspike, paste(path,"Variants.fa",sep = ""), names = names(refspike))
+write.fasta(refspike, paste(path,"VariantsDependent.fa",sep = ""), names = names(refspike))
 }

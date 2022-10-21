@@ -9,12 +9,18 @@ echo -e "    ________  _______                                                  
   \__ \/ / / / /_/ / | / / __/  / // /   / /   / /| | /  |/ / /   / __/   \n ___/ / /_/ / _, _/| |/ / /____/ // /___/ /___/ ___ |/ /|  / /___/ /___   
 /____/\____/_/ |_| |___/_____/___/_____/_____/_/  |_/_/ |_/\____/_____/   \n                                                                          "
 
+echo""
 echo "Quality:"${1}"/Noise Cutoff:"${2}
-echo "Analyzing Spike gene from "${3}" to "${4}
-echo "Read size between "${5}" and "${6}
+echo "Analyzing Spike gene from nt "${3}" to "${4}
+echo "Read size between "${5}" and "${6} "nt"
+echo "Mode "${7}
 echo -e "Quality, noise, read size and region to analyze can be set using these flags: \n -e qual=Q, -e noise=N, -e m=min, -e M=max -e start=S, -e end=E"
-sleep 3s
-
+echo "Modes independent or dependent can be set with -e mode=i or -e mode=d"
+echo "Stay tuned for updates. Visit us at https://github.com/folkehelseinstituttet/Wastewater_SARS-CoV-2"
+sleep 5s
+echo ""
+echo ""
+echo ""
 RefBowtie2=/home/docker/CommonFiles/reference/SpikeSars-CoV-2
 RefSpike=/home/docker/CommonFiles/reference/SpikeRef.fa
 Tools=/home/docker/CommonFiles/Tools
@@ -46,7 +52,11 @@ do
 
     if [[ ${numberoffiles} > 1  || ${SKIP} == "FALSE" ]] 
     then
+    echo ""
     echo "Processing "${numberoffiles}" fastq.gz files in "${dir}
+    echo ""
+    echo ""
+    echo ""
 
     cd ${dir}
 	  Reads=$(ls *.fastq.gz)
@@ -74,17 +84,35 @@ do
     conda deactivate
     #nextalign -i spike.cons.fa -o spike.cons.aligned.fa -r /home/docker/CommonFiles/reference/SpikeRef.fa
 
-    Rscript ${Tools}/AnalysisWW.R $(pwd)/ ${2} ${3} ${4}
-    #Rscript ${Tools}/AnalysisFixedWW.R $(pwd)/
-    mv Variants.fa /home/docker/results/${dir%/}.variants.fa
-    mv VariantResults.xlsx /home/docker/results/${dir%/}.results.xlsx
-    mv Coverage.pdf /home/docker/results/${dir%/}.coverage.pdf
-    mv Noise.pdf /home/docker/results/${dir%/}.noise.pdf
-    mv ${dir%/}.noise.tsv  /home/docker/results/${dir%/}.noise.tsv 
-    mv ${dir%/}.sorted.bam /home/docker/results/${dir%/}.sorted.bam
-    mv ${dir%/}.sorted.bam.bai /home/docker/results/${dir%/}.sorted.bam.bai
-    mv *_consensus.qual.txt /home/docker/results/${dir%/}_consensus.qual.txt 
-    mv ${dir%/}_consensus.fa /home/docker/results/${dir%/}_consensus.fa
+    if [ ${7}==d ]
+    then
+      Rscript ${Tools}/AnalysisWW.R $(pwd)/ ${2} ${3} ${4}
+      mkdir /home/docker/results/${dir%/}
+      mv Variants.fa /home/docker/results/${dir%/}/${dir%/}.variants.fa
+      mv VariantResults.xlsx /home/docker/results/${dir%/}/${dir%/}.results.xlsx
+      mv Coverage.pdf /home/docker/results/${dir%/}/${dir%/}.coverage.pdf
+      mv Noise.pdf /home/docker/results/${dir%/}/${dir%/}.noise.pdf
+      mv ${dir%/}.noise.tsv  /home/docker/results/${dir%/}/${dir%/}.noise.tsv 
+      mv ${dir%/}.sorted.bam /home/docker/results/${dir%/}/${dir%/}.sorted.bam
+      mv ${dir%/}.sorted.bam.bai /home/docker/results/${dir%/}/${dir%/}.sorted.bam.bai
+      mv *_consensus.qual.txt /home/docker/results/${dir%/}/${dir%/}_consensus.qual.txt 
+      mv ${dir%/}_consensus.fa /home/docker/results/${dir%/}/${dir%/}_consensus.fa
+      mv spike.cons.aligned.fa /home/docker/results/${dir%/}/spike.cons.aligned.fa
+
+    else
+      Rscript ${Tools}/AnalysisWW.R $(pwd)/ ${2} ${3} ${4}
+      #Rscript ${Tools}/AnalysisFixedWW.R $(pwd)/
+      mv Variants.fa /home/docker/results/${dir%/}.variants.fa
+      mv VariantResults.xlsx /home/docker/results/${dir%/}.results.xlsx
+      mv Coverage.pdf /home/docker/results/${dir%/}.coverage.pdf
+      mv Noise.pdf /home/docker/results/${dir%/}.noise.pdf
+      mv ${dir%/}.noise.tsv  /home/docker/results/${dir%/}.noise.tsv 
+      mv ${dir%/}.sorted.bam /home/docker/results/${dir%/}.sorted.bam
+      mv ${dir%/}.sorted.bam.bai /home/docker/results/${dir%/}.sorted.bam.bai
+      mv *_consensus.qual.txt /home/docker/results/${dir%/}_consensus.qual.txt 
+      mv ${dir%/}_consensus.fa /home/docker/results/${dir%/}_consensus.fa
+    fi
+
     rm dummy.csv
     rm bbasereader
     rm Rplots.pdf
@@ -96,19 +124,60 @@ done
 
 cp -R /home/docker/results /Data/results
 
-#post analysis Surveillence
+if [ ${7}==d ]
+then
+  cd /Data/results
+  Rscript ${Tools}/POIgenerator.R $(pwd)/ ${2} ${3} ${4}
+  for dir2 in $(ls -d */)
+  do
+    echo "Dependent mode on" ${dir2}
+    cd ${dir2}
+    cp ${Tools}/bbasereaderHC ./bbasereader
+    cp ../poi.temp ./poi.temp 
+
+    Rscript ${Tools}/AnalysisWWDep.R $(pwd)/ ${2} ${3} ${4}
+
+    mv ${dir2%/}.variants.fa /Data/results/${dir2%/}.variants.fa
+    mv *pdf /Data/results/
+    mv ${dir2%/}.results.xlsx /Data/results/${dir2%/}.results.xlsx
+    mv ${dir2%/}.noise.tsv  /Data/results/${dir2%/}.noise.tsv 
+    mv ${dir2%/}.sorted.bam /Data/results/${dir2%/}.sorted.bam
+    mv ${dir2%/}.sorted.bam.bai /Data/results/${dir2%/}.sorted.bam.bai
+    mv *_consensus.qual.txt /Data/results/${dir2%/}_consensus.qual.txt 
+    mv ${dir2%/}_consensus.fa /Data/results/${dir2%/}_consensus.fa
+    rm spike.cons.aligned.fa
+    mv VariantsDependent.fa /Data/results/${dir2%/}.variants.dependent.fa
+    mv VariantResultsDependent.xlsx /Data/results/${dir2%/}.results.dependent.xlsx
+    rm poi.temp
+    rm bbasereader
+    cd ..
+    rm -rf ${dir2}
+  done
+fi
+
+rm poi.temp
+
+if [ ${7}==d ]
+then
+cd /Data/results
+mkdir sequences
+cat *.variants.dependent.fa > sequences/merged_variants.fa
+
+else
 cd /Data/results
 mkdir sequences
 cat *.variants.fa > sequences/merged_variants.fa
+fi
+
 source activate nextclade
 nextclade --input-fasta sequences/merged_variants.fa --input-dataset /home/docker/nc_sars-cov-2 --output-csv Nextclade.results.csv --output-fasta merged_variants.aligned.fa
 conda deactivate
 Rscript ${Tools}/postanalysisWW.R
-rm merged_variants*
+
 
 #post analysis Fixed
 mkdir bam analysis QC
-mkdir analysis/SurveillenceMode
+ 
 mkdir analysis/FixedMode
 mv /Data/results/*.bam /Data/results/bam
 mv /Data/results/*.bai /Data/results/bam
@@ -117,17 +186,16 @@ mv /Data/results/*.qual.txt /Data/results/QC
 mv /Data/results/*noise.tsv /Data/results/QC
 mv /Data/results/*coverage.pdf /Data/results/QC
 mv /Data/results/*noise.pdf /Data/results/QC
-mv /Data/results/*results.xlsx /Data/results/analysis/SurveillenceMode
-mv /Data/results/*Barplot.pdf /Data/results/analysis/SurveillenceMode
-mv /Data/results/*Sankeyplot*.pdf /Data/results/analysis/SurveillenceMode
+mv /Data/results/*.xlsx /Data/results/analysis
+mv /Data/results/*Barplot.pdf /Data/results/analysis
+mv /Data/results/*Sankeyplot*.pdf /Data/results/analysis
 mv /Data/results/Results.Aggregated.xlsx /Data/results/analysis/SurveillenceMode
-mv /Data/results/Nextclade.results.csv /Data/results/analysis/SurveillenceMode/Variants.nextclade.csv
+mv /Data/results/Nextclade.results.csv /Data/results/analysis/Variants.nextclade.csv
 rm /Data/results/Rplots.pdf
+rm /Data/results/merged_variants*.fasta
+rm /Data/results/merged_variants*.csv
 #To be changed after adding fixed mode
-mv /Data/results/analysis/SurveillenceMode/* /Data/results/analysis/
+
+
 rm -rf /Data/results/analysis/SurveillenceMode
 rm -rf /Data/results/analysis/FixedMode
-#mv *ResultsFixedPos.xlsx /analysis/FixedMode
-
-
-

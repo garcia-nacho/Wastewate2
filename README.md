@@ -64,6 +64,7 @@ Here you will find:
 -Barplots showing the relative abundance of the different combinations. Differente granularity levels are included (amino acid sequence level, nextclade clade level, pangolin level)   
 -Excel files with the raw results    
 -The nextclade output for the different variants identified   
+-A barplot showing the relative abundance of all the single mutations found in the samples.
 
 **bam**   
 Here you will find the *bam* files containing the reads aligned against the Spike gene of the *wuhan-hu-1* strain   

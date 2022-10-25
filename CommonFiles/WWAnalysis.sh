@@ -14,9 +14,11 @@ echo "Quality:"${1}"/Noise Cutoff:"${2}
 echo "Analyzing Spike gene from nt "${3}" to "${4}
 echo "Read size between "${5}" and "${6} "nt"
 echo "Mode "${7}
+echo ""
 echo -e "Quality, noise, read size and region to analyze can be set using these flags: \n -e qual=Q, -e noise=N, -e m=min, -e M=max -e start=S, -e end=E"
 echo "Modes independent or dependent can be set with -e mode=i or -e mode=d"
-echo "Stay tuned for updates. Visit us at https://github.com/folkehelseinstituttet/Wastewater_SARS-CoV-2"
+echo "Stay tuned for updates!" 
+echo "Visit us at https://github.com/folkehelseinstituttet/Wastewater_SARS-CoV-2"
 sleep 5s
 echo ""
 echo ""
@@ -199,3 +201,10 @@ rm /Data/results/merged_variants*.csv
 
 rm -rf /Data/results/analysis/SurveillenceMode
 rm -rf /Data/results/analysis/FixedMode
+
+cd /Data/results
+cp ${Tools}/bbasereaderHC ./bbasereader
+Rscript /home/docker/CommonFiles/Tools/AnalysisSingleMuts.R $(pwd)/ ${2}
+mv /Data/results/*.pdf /Data/results/analysis
+mv /Data/results/*.xlsx /Data/results/analysis
+rm ./bbasereader

@@ -27,10 +27,11 @@ for (i in 1:length(noise.path)) {
 }
 
 
-noise.table.agg<-aggregate(V2~V1, noise.table, sum)
+noise.table.agg<-aggregate(V2~V1, noise.table, mean)
 depth.table.agg<-aggregate(V3~V1, noise.table, mean)
 
-poi.co<-  (n.end-n.start)*0.02
+poi.co<-  length(depth.table.agg$V3>20)*0.025
+
 poit<-noise.table.agg[which(noise.table.agg$V2>co.n & noise.table.agg$V1>n.start & noise.table.agg$V1 < n.end & depth.table.agg$V3>20),]
 poi<-poit$V1[order(poit$V2, decreasing=TRUE)][1:min(round(poi.co),nrow(poit))]
 write.csv(poi, "poi.temp",row.names = FALSE)

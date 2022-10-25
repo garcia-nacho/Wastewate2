@@ -29,7 +29,7 @@ for (i in 1:length(noise.path)) {
   }
 }
 
-co.n<-co.n/length(noise.path)
+#co.n<-co.n/length(noise.path)
 
 noise.table.agg<-aggregate(V2~V1, noise.table, mean)
 depth.table.agg<-aggregate(V3~V1, noise.table, mean)

@@ -19,9 +19,10 @@ path<-path[1]
 
 
 noise.path<-list.files(path, pattern = ".*noise.tsv",full.names = TRUE, recursive = TRUE)
-
+if(exists("noise.table")) rm(noise.table)
 for (i in 1:length(noise.path)) {
-  noise.table.d<-read.csv(noise.path[i], sep = "\t", header = FALSE)  
+  noise.table.d<-read.csv(noise.path[i], sep = "\t", header = FALSE)
+  noise.table.d$Sample<-gsub(".*/","",gsub(".noise.tsv","",noise.path[i]))
   if(!exists("noise.table")){
     noise.table<-noise.table.d
   }else{
@@ -89,12 +90,14 @@ basediff<-as.data.frame(matrix(NA, ncol = 6, nrow=length(position.files)))
 colnames(basediff)<-c("Base", "A","T","C","G", "Count")
 for (i in 1:length(position.files)) {
   dummy<-fread(position.files[i],sep = "\t", header = FALSE)
+  
+  if(nrow(dummy)>0){
   dummy<-as.data.frame(dummy[,-1])
   colnames(dummy)<-c("Position","Base")
   
   if(length(which(dummy$Base=="D"))>0) dummy<-dummy[-which(dummy$Base=="D"),]
   if(length(which(dummy$Base=="I"))>0) dummy<-dummy[-which(dummy$Base=="I"),]
-  
+  }
   if(nrow(dummy)>0){
     dummy<-as.data.frame(dummy)
     basediff$Base[i]<-unique(dummy$Position)[1]
@@ -130,6 +133,8 @@ for (i in 1:length(position.files)) {
   
   
 }
+
+if(length(which(is.na(basediff$Base)))>0)basediff<-basediff[-which(is.na(basediff$Base))]
 basediff.melted<-melt(basediff, id=c("Base","Count","File"))
 s<-read.fasta("/home/docker/CommonFiles/reference/SpikeRef.fa")
 s<-as.character(s$Spike)
@@ -143,6 +148,14 @@ basediff.melted<-basediff.melted[which(basediff.melted$CI<basediff.melted$value)
 
 bases.to.check<-unique(paste(basediff.melted$Base,basediff.melted$variable,sep = "-"))
 original<-translate(s)
+
+noise.table$Cover<-"High"
+noise.table$Cover[which(noise.table$V3<10)]<-"Low"
+noise.table<-noise.table[which(noise.table$V1 %in% as.numeric(gsub("-.*","",bases.to.check))) ,]
+
+cov.agg<-aggregate(V1~Sample+Cover, noise.table, length)
+cov.agg<-cov.agg[which(cov.agg$Cover=="Low"),]
+cov.agg$Warning<-paste("Warn:",cov.agg$V1, "Positions with low coverage")
 
 for (i in 1:length(bases.to.check)){
 mutated<-s
@@ -175,6 +188,10 @@ basediff.melted$AApos<-factor( basediff.melted$AApos, levels =unique(basediff.me
 
 
 colnames(basediff.melted)[9]<-"Mutation"
+
+basediff.melted<-merge(basediff.melted, cov.agg, by.x="File", by.y="Sample", all.x=TRUE)
+basediff.melted$File[which(!is.na(basediff.melted$Warning))]<-paste(basediff.melted$File[which(!is.na(basediff.melted$Warning))], "/" ,basediff.melted$Warning[which(!is.na(basediff.melted$Warning))])
+
 if(length(unique(basediff.melted$File))<10){
 ggplot(basediff.melted)+
   geom_bar(aes(AApos,value, fill=Mutation), stat = "identity")+
@@ -183,7 +200,8 @@ ggplot(basediff.melted)+
     scale_fill_manual(values = rainbow(length(unique(basediff.melted$Mutation))))+
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))+
   xlab("Position Spike")+
-    ylab("Ratio mutant reads")
+    ylab("Ratio mutant reads")+
+    ylim(0,1)
   ggsave(paste(path,"SingleMutationsBarplots.pdf",sep = "") ,width =  8.27, height =  11.69)
 }
 
@@ -206,7 +224,8 @@ stop<-10
       scale_fill_manual(values = rainbow(length(unique(basediff.melted$Mutation))))+
       theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))+
       xlab("Position Spike")+
-      ylab("Ratio mutant reads")
+      ylab("Ratio mutant reads")+
+      ylim(0,1)
     
     ggsave(paste(path,"SingleMutationsBarplots_part",counter, ".pdf",sep = "") ,width =  8.27, height =  11.69)
     start<-stop+1

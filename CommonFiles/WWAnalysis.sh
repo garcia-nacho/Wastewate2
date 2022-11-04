@@ -14,15 +14,17 @@ echo "Quality:"${1}"/Noise Cutoff:"${2}
 echo "Analyzing Spike gene from nt "${3}" to "${4}
 echo "Read size between "${5}" and "${6} "nt"
 echo "Mode "${7}
+echo "Trimming "${8}"nt"
+echo ${9}" Technology"
 echo ""
-echo -e "Quality, noise, read size and region to analyze can be set using these flags: \n -e qual=Q, -e noise=N, -e m=min, -e M=max -e start=S, -e end=E"
+echo -e "Quality, noise, read size, region to analyze and trimming can be set using these flags: \n -e qual=Q, -e noise=N, -e m=min, -e M=max -e start=S, -e end=E -e trim=20"
 echo "Modes independent or dependent can be set with -e mode=i or -e mode=d"
 echo "Stay tuned for updates!" 
 echo "Visit us at https://github.com/folkehelseinstituttet/Wastewater_SARS-CoV-2"
 sleep 5s
 echo ""
 echo ""
-echo ""
+
 RefBowtie2=/home/docker/CommonFiles/reference/SpikeSars-CoV-2
 RefSpike=/home/docker/CommonFiles/reference/SpikeRef.fa
 Tools=/home/docker/CommonFiles/Tools
@@ -32,6 +34,7 @@ basedir=/Data
 mkdir -p /home/docker/results/
 
 source activate nextclade
+echo "Downloading Nextclade database"
 nextclade dataset get --name 'sars-cov-2' --output-dir '/home/docker/nc_sars-cov-2'
 conda deactivate
 
@@ -57,14 +60,27 @@ do
     echo ""
     echo "Processing "${numberoffiles}" fastq.gz files in "${dir}
     echo ""
-    echo ""
-    echo ""
+    
+    
 
     cd ${dir}
 	  Reads=$(ls *.fastq.gz)
     cat ${Reads} > ${dir%/}.fastq.gz
     gzip -d ${dir%/}.fastq.gz
     seqkit seq ${dir%/}.fastq -M ${6} -m ${5} -Q ${1} > ${dir%/}.filtered.fastq
+
+    if (( ${8} != 0))
+    then
+    echo "Trimming "${8}"nt"
+    source activate cutadaptenv
+    cutadapt --cut ${8} -o ./trimmed1.fastq ./${dir%/}.filtered.fastq 
+    rm ./${dir%/}.filtered.fastq
+    cutadapt --cut -${8} -o ./trimmed2.fastq ./trimmed1.fastq
+    rm ./trimmed1.fastq
+    mv ./trimmed2.fastq ./${dir%/}.filtered.fastq
+    conda deactivate
+    fi
+
     rm ${dir%/}.fastq
     #(bowtie2 -p 8 -x ${RefBowtie2} -U ${dir%/}.fastq -S ${dir%/}.sam) 2> ${dir%/}_Bowtie2summary.txt
     #(tanoti -r ${RefSpike} -i ${dir%/}.fastq -o ${dir%/}.sam -u) 2> Tanoti_${dir%/}.summary.txt
@@ -86,7 +102,7 @@ do
     conda deactivate
     #nextalign -i spike.cons.fa -o spike.cons.aligned.fa -r /home/docker/CommonFiles/reference/SpikeRef.fa
 
-    if [ ${7}==d ]
+    if [ ${7} == d ]
     then
       Rscript ${Tools}/AnalysisWW.R $(pwd)/ ${2} ${3} ${4}
       mkdir /home/docker/results/${dir%/}
@@ -126,7 +142,7 @@ done
 
 cp -R /home/docker/results /Data/results
 
-if [ ${7}==d ]
+if [ ${7} == d ]
 then
   cd /Data/results
   Rscript ${Tools}/POIgenerator.R $(pwd)/ ${2} ${3} ${4}
@@ -159,7 +175,7 @@ fi
 
 rm poi.temp
 
-if [ ${7}==d ]
+if [ ${7} == d ]
 then
 cd /Data/results
 mkdir sequences
@@ -205,6 +221,7 @@ rm -rf /Data/results/analysis/FixedMode
 cd /Data/results
 cp ${Tools}/bbasereaderHC ./bbasereader
 Rscript /home/docker/CommonFiles/Tools/AnalysisSingleMuts.R $(pwd)/ ${2}
+Rscript /home/docker/CommonFiles/Tools/NoiseMosaic.R $(pwd)/ ${2}
 mv /Data/results/*.pdf /Data/results/analysis
 mv /Data/results/*.xlsx /Data/results/analysis
 rm ./bbasereader

@@ -31,14 +31,18 @@ ggplot(noise.table)+
   xlab("Position")+
   ylab("Noise")+
   geom_hline(yintercept=co.n, linetype='dotted', col = 'red')+
-  theme_minimal()
+  theme_minimal()+
+  ggtitle(paste("Noise",sampleid))
+  
 ggsave(paste(path, "Noise.pdf",sep = ""))
 
 ggplot(noise.table)+
   geom_line(aes(V1,V3))+
   xlab("Position")+
   ylab("Depth")+
-  theme_minimal()
+  theme_minimal()+
+  ggtitle(paste("Coverage",sampleid))
+  
 ggsave(paste(path, "Coverage.pdf",sep = ""))
 
 poi<-noise.table$V1[which(noise.table$V2>co.n & noise.table$V1>n.start & noise.table$V1<n.end & noise.table$V3>20)]

@@ -155,7 +155,7 @@ noise.table<-noise.table[which(noise.table$V1 %in% as.numeric(gsub("-.*","",base
 
 cov.agg<-aggregate(V1~Sample+Cover, noise.table, length)
 cov.agg<-cov.agg[which(cov.agg$Cover=="Low"),]
-cov.agg$Warning<-paste("Warn:",cov.agg$V1, "Positions with low coverage")
+if(nrow(cov.agg)>0) cov.agg$Warning<-paste("Warn:",cov.agg$V1, "Positions with low coverage")
 
 for (i in 1:length(bases.to.check)){
 mutated<-s
@@ -188,8 +188,12 @@ basediff.melted$AApos<-factor( basediff.melted$AApos, levels =unique(basediff.me
 
 
 colnames(basediff.melted)[9]<-"Mutation"
+if(nrow(cov.agg)>0){
+  basediff.melted<-merge(basediff.melted, cov.agg, by.x="File", by.y="Sample", all.x=TRUE)
+}else{
+    basediff.melted$Warning<-NA
+  }
 
-basediff.melted<-merge(basediff.melted, cov.agg, by.x="File", by.y="Sample", all.x=TRUE)
 basediff.melted$File[which(!is.na(basediff.melted$Warning))]<-paste(basediff.melted$File[which(!is.na(basediff.melted$Warning))], "/" ,basediff.melted$Warning[which(!is.na(basediff.melted$Warning))])
 
 if(length(unique(basediff.melted$File))<10){

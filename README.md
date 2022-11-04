@@ -27,8 +27,12 @@ To change the region to analyze (default 1250-2250 by default) use the flags *-e
 
 To change the read size (default between 500-1300bp by default) use the flags *-e m* and *-e M*. E.g:    
 <code>docker run -it --rm -e m=100 -e M=500 -v $(pwd):/Data wastewater </code>   
+   
+If an amplicon based approach was used, primers can be trimmed using the flag *-e trim⋅. E.g:
+<code>docker run -it --rm -v $(pwd):/Data wastewater -e trim=20</code>   will remove 20 nt from each side of the fastq files
 
-There are two modes to run the pipeline. Dependent or independent (default). When the pipeline runs in independent mode (-e mode=i), each sample with be analyzed idependently of the rest of the samples. That means that some sites might not be analyzed for all the samples. This mode is more sentitive to detect variants in the samples. When the pipeline runs in dependent mode (-e mode=d), the sites that vary more on the entire set of samples is analyzed. This more is more convenient to detect changes in the dataset and the for all samples will be comparable, since all of them will have the same sites analyzed.    
+   
+There are two modes to run the pipeline. Dependent or independent (default). When the pipeline runs in independent mode (-e mode=i), each sample with be analyzed idependently of the rest of the samples. That means that some sites might not be analyzed for all the samples. This mode is more sentitive to detect variants in the samples. When the pipeline runs in dependent mode (*-e mode=d*), the sites that vary more on the entire set of samples is analyzed. This more is more convenient to detect changes in the dataset and the for all samples will be comparable, since all of them will have the same sites analyzed.    
 
 The script must be run in a folder with the following structure:
 

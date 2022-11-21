@@ -25,10 +25,32 @@ RUN cd /home/docker \
 RUN /bin/bash -c ". activate nextclade && \
     conda install -c bioconda nextclade"
 USER root
+RUN RUN apt-get update \
+    && apt get install -y --no-install-recommends \
+    libcairo2-dev \
+    libclang-dev \
+    libcurl4-openssl-dev \
+    libfontconfig1-dev \
+    libfreetype6-dev \
+    libfribidi-dev \
+    libgdal-dev \
+    libgeos-dev \
+    libharfbuzz-dev \
+    libjpeg-dev \
+    libproj-dev \
+    libpng-dev \
+    libpq-dev \
+    libsodium-dev \
+    libssl-dev \
+    libtiff5-dev \
+    libudunits2-dev \
+    libx11-dev \
+    libxml2-dev \
+    && rm -rf /var/lib/apt/lists/*    
 RUN Rscript -e "install.packages(c('doSNOW', \
 'progress','foreach','parallel', 'seqinr', 'doParallel', \
- 'ggplot2',  'reshape2', 'ggpubr', 'readxl','tidyverse','writexl', 'devtools', 'data.table','digest'))"
-RUN Rscript -e "devtools::install_github('davidsjoberg/ggsankey')"
+ 'ggplot2',  'reshape2', 'ggpubr', 'readxl','tidyverse','writexl', 'remotes', 'data.table','digest'))"
+RUN Rscript -e "remotes::install_github('davidsjoberg/ggsankey')"
 ENV start=1250
 ENV end=2250
 ENV M=1300

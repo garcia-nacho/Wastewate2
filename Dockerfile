@@ -29,6 +29,14 @@ RUN Rscript -e "install.packages(c('doSNOW', \
 'progress','foreach','parallel', 'seqinr', 'doParallel', \
  'ggplot2',  'reshape2', 'ggpubr', 'readxl','tidyverse','writexl', 'devtools', 'data.table','digest'))"
 RUN Rscript -e "devtools::install_github('davidsjoberg/ggsankey')"
+
+RUN rm /usr/bin/gcc /usr/bin/gcc-ar /usr/bin/gcc-nm /usr/bin/gcc-ranlib \
+    && ln /usr/bin/gcc-nm-9 /usr/bin/gcc-nm \
+    && ln /usr/bin/gcc-ar-9 /usr/bin/gcc-ar \
+    && ln /usr/bin/gcc-9 /usr/bin/gcc \
+    && ln /usr/bin/gcc-ranlib-9 /usr/bin/gcc-ranlib 
+RUN Rscript -e "BiocManager::install(c('msa','GenomicAlignments','ggtree'))"
+
 ENV start=1250
 ENV end=2250
 ENV M=1300

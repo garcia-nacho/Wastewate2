@@ -38,6 +38,10 @@ echo "Downloading Nextclade database"
 nextclade dataset get --name 'sars-cov-2' --output-dir '/home/docker/nc_sars-cov-2'
 conda deactivate
 
+echo ""
+echo "Preparing Spike References"
+Rscript /home/docker/CommonFiles/Tools/Spike_Extractor.R
+
 for dir in $(ls -d */)
 do
     
@@ -87,11 +91,21 @@ do
     minimap2 --secondary=no -ax map-ont ${RefSpike} ${dir%/}.filtered.fastq > ${dir%/}.sam  
     samtools view -F 1024 -F 256 -F4 -F 2048 -bS ${dir%/}.sam | samtools sort -o ${dir%/}.sorted.bam
     samtools index ${dir%/}.sorted.bam
+
+    minimap2 --secondary=no -ax map-ont /Data/VariantSpike.fasta ${dir%/}.filtered.fastq > ${dir%/}_voc.sam  
+  
+    Rscript /home/docker/CommonFiles/Tools/SamParser.R
+
+    #samtools depth -a ${dir%/}_voc.sorted.bam > ${dir%/}_voc_depth.tsv
     #samtools mpileup -aa -A -d 0 -Q 0 --reference ${RefSpike} ./${dir%/}.sorted.bam | ivar consensus -t 0 -n N -m 20 -p ${dir%/}_consensus 
     ls
     samtools mpileup -aa -A -d 0 -q 0 --reference ${RefSpike} ./${dir%/}.sorted.bam | ivar consensus -t 0 -n N -m 20 -p ${dir%/}_consensus
 
     rm ${dir%/}.sam
+    rm ${dir%/}_voc.sam
+    #rm ${dir%/}_voc.sorted.bam
+    #rm ${dir%/}_voc.sorted.bam.bai
+      
     rm ${dir%/}.filtered.fastq
     ${Tools}/FINex2 -f ${dir%/}.sorted.bam > ${dir%/}.noise.tsv 
     cp ${Tools}/bbasereaderHC ./bbasereader
@@ -113,9 +127,11 @@ do
       mv ${dir%/}.noise.tsv  /home/docker/results/${dir%/}/${dir%/}.noise.tsv 
       mv ${dir%/}.sorted.bam /home/docker/results/${dir%/}/${dir%/}.sorted.bam
       mv ${dir%/}.sorted.bam.bai /home/docker/results/${dir%/}/${dir%/}.sorted.bam.bai
+      mv ${dir%/}_voc_depth.tsv /home/docker/results/${dir%/}/${dir%/}_voc_depth.tsv     
       mv *_consensus.qual.txt /home/docker/results/${dir%/}/${dir%/}_consensus.qual.txt 
       mv ${dir%/}_consensus.fa /home/docker/results/${dir%/}/${dir%/}_consensus.fa
       mv spike.cons.aligned.fa /home/docker/results/${dir%/}/spike.cons.aligned.fa
+      mv ${dir%/}_voc_depth.csv /home/docker/results/${dir%/}_voc_depth.csv
 
     else
       Rscript ${Tools}/AnalysisWW.R $(pwd)/ ${2} ${3} ${4}
@@ -129,6 +145,7 @@ do
       mv ${dir%/}.sorted.bam.bai /home/docker/results/${dir%/}.sorted.bam.bai
       mv *_consensus.qual.txt /home/docker/results/${dir%/}_consensus.qual.txt 
       mv ${dir%/}_consensus.fa /home/docker/results/${dir%/}_consensus.fa
+      mv ${dir%/}_voc_depth.tsv /home/docker/results/${dir%/}_voc_depth.tsv 
     fi
 
     rm dummy.csv
@@ -222,6 +239,9 @@ cd /Data/results
 cp ${Tools}/bbasereaderHC ./bbasereader
 Rscript /home/docker/CommonFiles/Tools/AnalysisSingleMuts.R $(pwd)/ ${2}
 Rscript /home/docker/CommonFiles/Tools/NoiseMosaic.R $(pwd)/ ${2}
+Rscript /home/docker/CommonFiles/Tools/MappedVariantPlotter.R
 mv /Data/results/*.pdf /Data/results/analysis
 mv /Data/results/*.xlsx /Data/results/analysis
 rm ./bbasereader
+mv /Data/VariantSpike.fasta /Data/results/analysis/ReferencesSpike.fasta
+mv /Data/results/*_voc_depth.csv /Data/results/QC

@@ -24,19 +24,17 @@ RUN cd /home/docker \
     && ln -s /home/docker/miniconda3/lib/libcrypto.so.1.1 /home/docker/miniconda3/lib/libcrypto.so.1.0.0    
 RUN /bin/bash -c ". activate nextclade && \
     conda install -c bioconda nextclade"
-USER root
+USER root 
 RUN Rscript -e "install.packages(c('doSNOW', \
 'progress','foreach','parallel', 'seqinr', 'doParallel', \
- 'ggplot2',  'reshape2', 'ggpubr', 'readxl','tidyverse','writexl', 'devtools', 'data.table','digest'))"
-RUN Rscript -e "devtools::install_github('davidsjoberg/ggsankey')"
-
+ 'ggplot2',  'reshape2', 'ggpubr', 'readxl','tidyverse','writexl', 'remotes', 'data.table','digest', 'BiocManager'))"
+RUN Rscript -e "remotes::install_github('davidsjoberg/ggsankey')"
 RUN rm /usr/bin/gcc /usr/bin/gcc-ar /usr/bin/gcc-nm /usr/bin/gcc-ranlib \
     && ln /usr/bin/gcc-nm-9 /usr/bin/gcc-nm \
     && ln /usr/bin/gcc-ar-9 /usr/bin/gcc-ar \
     && ln /usr/bin/gcc-9 /usr/bin/gcc \
     && ln /usr/bin/gcc-ranlib-9 /usr/bin/gcc-ranlib 
-RUN Rscript -e "BiocManager::install(c('msa','GenomicAlignments','ggtree'))"
-
+RUN Rscript -e "BiocManager::install('msa')"
 ENV start=1250
 ENV end=2250
 ENV M=1300

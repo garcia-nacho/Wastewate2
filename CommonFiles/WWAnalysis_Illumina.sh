@@ -36,6 +36,10 @@ echo "Downloading Nextclade database"
 nextclade dataset get --name 'sars-cov-2' --output-dir '/home/docker/nc_sars-cov-2'
 conda deactivate
 
+echo ""
+echo "Preparing Spike References"
+Rscript SpikeExtractor.R
+
 for dir in $(ls -d */)
 do
     
@@ -65,14 +69,23 @@ do
     rm ${dir%/}.fastq
     (bowtie2 -p 8 -x ${RefBowtie2} -1 ${dir%/}.R1.filtered.fastq.gz -2 ${dir%/}.R1.filtered.fastq.gz -S ${dir%/}.sam) 2> ${dir%/}_Bowtie2summary.txt
     #(tanoti -r ${RefSpike} -i ${dir%/}.fastq -o ${dir%/}.sam -u) 2> Tanoti_${dir%/}.summary.txt
-    #minimap2 --secondary=no -ax map-ont ${RefSpike} ${dir%/}.filtered.fastq > ${dir%/}.sam  
-    samtools view -F 1024 -F 256 -F4 -F 2048 -bS ${dir%/}.sam | samtools sort -o ${dir%/}.sorted.bam
+    minimap2 --secondary=no -ax map-ont /Data/VariantSpike.fasta ${dir%/}.filtered.fastq > ${dir%/}_voc.sam  
+    samtools view  -F 256 -F4 -F 2048 -bS ${dir%/}.sam | samtools sort -o ${dir%/}.sorted.bam
     samtools index ${dir%/}.sorted.bam
+
+    samtools view -F 256 -F4 -F 2048 -bS ${dir%/}_voc.sam | samtools sort -o ${dir%/}_voc.sorted.bam
+    samtools index ${dir%/}_voc.sorted.bam
+
+    samtools depth -a ${dir%/}_voc.sorted.bam > ${dir%/}_voc_depth.tsv
+
+
     #samtools mpileup -aa -A -d 0 -Q 0 --reference ${RefSpike} ./${dir%/}.sorted.bam | ivar consensus -t 0 -n N -m 20 -p ${dir%/}_consensus 
     ls
     samtools mpileup -aa -A -d 0 -q 0 --reference ${RefSpike} ./${dir%/}.sorted.bam | ivar consensus -t 0 -n N -m 20 -p ${dir%/}_consensus
 
     rm ${dir%/}.sam
+    rm ${dir%/}_voc.sam
+
     rm *.filtered.fastq.gz
     ${Tools}/FINex2 -f ${dir%/}.sorted.bam > ${dir%/}.noise.tsv 
     cp ${Tools}/bbasereaderHC ./bbasereader
@@ -89,7 +102,10 @@ do
     mv Noise.pdf /home/docker/results/${dir%/}.noise.pdf
     mv ${dir%/}.noise.tsv  /home/docker/results/${dir%/}.noise.tsv 
     mv ${dir%/}.sorted.bam /home/docker/results/${dir%/}.sorted.bam
+    mv ${dir%/}_voc.sorted.bam /home/docker/results/${dir%/}_voc.sorted.bam
     mv ${dir%/}.sorted.bam.bai /home/docker/results/${dir%/}.sorted.bam.bai
+    mv ${dir%/}_voc.sorted.bam.bai /home/docker/results/${dir%/}_voc.sorted.bam.bai
+    mv ${dir%/}_voc_depth.tsv /home/docker/results/${dir%/}_voc_depth.tsv
     mv *_consensus.qual.txt /home/docker/results/${dir%/}_consensus.qual.txt 
     mv ${dir%/}_consensus.fa /home/docker/results/${dir%/}_consensus.fa
     mv *Bowtie2summary.txt /home/docker/results/${dir%/}_bowtie2_summary.txt
@@ -129,6 +145,7 @@ cd /Data/results
 cp ${Tools}/bbasereaderHC ./bbasereader
 Rscript /home/docker/CommonFiles/Tools/AnalysisSingleMuts.R $(pwd)/ ${2}
 Rscript /home/docker/CommonFiles/Tools/NoiseMosaic.R $(pwd)/ ${2}
+Rscript /home/docker/CommonFiles/Tools/MappedVariantPlotter.R
 mv /Data/results/*.pdf /Data/results/analysis
 mv /Data/results/*.xlsx /Data/results/analysis
 rm ./bbasereader

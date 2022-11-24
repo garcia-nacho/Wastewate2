@@ -40,6 +40,7 @@ conda deactivate
 
 echo ""
 echo "Preparing Spike References"
+cat /home/docker/CommonFiles/Variants/*.fa* /home/docker/CommonFiles/Variants/variantRefs.fasta
 Rscript /home/docker/CommonFiles/Tools/Spike_Extractor.R
 
 for dir in $(ls -d */)

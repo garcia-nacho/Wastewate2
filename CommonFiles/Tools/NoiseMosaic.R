@@ -1,4 +1,4 @@
-library(ggplot)
+library(ggplot2)
 path=commandArgs(TRUE)
 path<-path[1]
 co.n<-as.numeric(path[2])

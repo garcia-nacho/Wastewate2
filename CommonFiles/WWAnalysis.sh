@@ -239,6 +239,7 @@ cd /Data/results
 cp ${Tools}/bbasereaderHC ./bbasereader
 Rscript /home/docker/CommonFiles/Tools/AnalysisSingleMuts.R $(pwd)/ ${2}
 Rscript /home/docker/CommonFiles/Tools/NoiseMosaic.R $(pwd)/ ${2}
+rm Rplots.pdf
 Rscript /home/docker/CommonFiles/Tools/MappedVariantPlotter.R
 mv /Data/results/*.pdf /Data/results/analysis
 mv /Data/results/*.xlsx /Data/results/analysis

@@ -7,7 +7,7 @@ library(seqinr)
 #Docker
 
 spike <-"/home/docker/CommonFiles/reference/SpikeRef.fa"
-refs<-"/home/docker/CommonFiles/Variants/variantRefs.fasta"
+refs<-"/Data/variantRefs.fasta"
 sequences<-readDNAStringSet(c(refs,spike))
   
   sequences.aln<-list()

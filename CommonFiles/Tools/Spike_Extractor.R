@@ -28,7 +28,7 @@ sequences<-readDNAStringSet(c(refs,spike))
     end.read<-end.read[which(end.read==max(end.read))]
     
     Aligned.samples<-as.character(Query[start.read:end.read])
-    
+    if(length(which(Aligned.samples=="-"))>0) Aligned.samples<-Aligned.samples[-which(Aligned.samples=="-")]
     sequences.aln[[i]]<-Aligned.samples
     names(sequences.aln)[i]<-names(DNAStr)[-grep("Spike", names(DNAStr))]
     }

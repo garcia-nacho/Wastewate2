@@ -39,15 +39,24 @@ cluster.cores<-makeCluster(cores)
 registerDoSNOW(cluster.cores)
 
 out.par<-foreach(i=1:length(samples.to.analyze), .verbose=FALSE, .options.snow = opts) %dopar%{
-system(paste("./bam2msa ", "./SpikeRef.fa ",bam.files[i]," Spike:1250-2250",
-             " \\| cut -f 1-2 > ", gsub(".*/","MSAFastas/",gsub(".bam","_b2f.tsv",bam.files[i])), sep = ""))
+  system(paste("./bam2msa ", "./SpikeRef.fa ",bam.files[i]," Spike:1250-2250",
+             " | cut -f 1-2 > ", gsub(".*/","MSAFastas/",gsub(".bam","_b2f.tsv",bam.files[i])), sep = ""))
+  system(paste("gzip ",gsub(".*/","MSAFastas/",gsub(".bam","_b2f.tsv",bam.files[i])), sep = ""))
 }
 stopCluster(cluster.cores)
 
 
 
 
+# Noise co calculation -------------------------------------------------------
 
+
+
+
+
+
+
+# Unpack and read files ---------------------------------------------------
 
 
 

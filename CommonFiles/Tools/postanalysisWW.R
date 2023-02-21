@@ -10,7 +10,9 @@ include.deletions<-FALSE
 results<-list.files(r.path, full.names = TRUE)
 
 excels<-results[grep("xlsx", results)]
+excels<-excels[grep("results.xlsx", excels)]
 dummync<-read.csv(paste(r.path,"Nextclade.results.csv",sep = ""), sep = ";")
+#dummync<-read.csv(paste(r.path,"Variants.nextclade.csv",sep = ""), sep = ";")
 colnames(dummync)[1]<-"variantID"
 dummync$variantID<-gsub("ID-","", dummync$variantID)
 if(length(which(duplicated(dummync)))>0 ) dummync<-dummync[-which(duplicated(dummync)),]
@@ -25,7 +27,7 @@ for (i in 1:length(excels)) {
   dummy<-read_xlsx(excels[i])
   if(nrow(dummy)>0){
   dummy<- merge(dummy, dummync[,c("variantID", "clade","Nextclade_pango", "aaSubstitutions","substitutions")], by ="variantID", all.x = TRUE)
-  samplename<-gsub("\\..*","",gsub(".*/","",excels[i]))
+  samplename<-gsub("\\.results.*","",gsub(".*/","",excels[i]))
   dummy$Sample<-samplename
   dummy$ImputedDeletions<-NA
   for (j in 1:nrow(dummy)) {
@@ -48,12 +50,17 @@ for (i in 1:length(excels)) {
 }
 
 
+
 #results.v<-list.files(paste(r.path,"variants",sep = ""), full.names = TRUE)
 #variantfiles<-results.v[grep("variants.csv", results.v)]
 results.out$Mutations<-results.out$aaSubstitutions
 if(length(which(results.out$Mutations==""))>0) results.out$Mutations[which(results.out$Mutations=="")]<-"None"
 
+
+
 results.to.plot<-results.out[which(results.out$ratio>0.015),c("Sample", "Mutations", "ratio")]
+results.to.plot<-aggregate(ratio~Mutations + Sample,  results.to.plot, sum)
+
 samples.toplot<-unique(results.to.plot$Sample)
 if(exists("dummy.out"))try(rm(dummy.out))
 for (i in 1:length(samples.toplot)) {
@@ -67,40 +74,44 @@ for (i in 1:length(samples.toplot)) {
     dummy.out<-rbind(dummy.out,dummy)
   }
 }
+
 numberofreads<-aggregate(count~Sample, results.out, sum )
 results.to.plot<-rbind(results.to.plot,dummy.out)
+
 ggplot(results.to.plot)+
   geom_bar(aes(Sample, ratio, fill=Mutations),position = "stack", stat = "identity")+
   scale_fill_manual(values =  c("grey",rainbow(length(unique(results.to.plot$Mutations))-1)))+
+  theme(legend.position="bottom")+
   theme_minimal()+
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))+
   ylab("Ratio")
-ggsave(paste(r.path, "Barplot.pdf"), width =   25, height = 12)
+  
+ggsave(paste(r.path, "MutationsBarplot.pdf",sep=""), width =   25, height = 12)
 agg.mut<-results.to.plot
 
 agg.mut<-merge(results.to.plot, numberofreads, by="Sample")
 agg.mut$count<-agg.mut$count*agg.mut$ratio
 
-resultsagg<-aggregate(ratio~clade+Sample, results.out, sum)
-if(length(which(resultsagg$clade==""))>0) resultsagg$clade[which(resultsagg$clade=="")]<-"NA"
-ggplot(resultsagg)+
-  geom_bar(aes(Sample, ratio, fill=clade),position = "stack", stat = "identity")+
-  scale_fill_manual(values =  rainbow(length(unique(resultsagg$clade))))+
-  theme_minimal()+
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
-ggsave(paste(r.path, "Clade_Barplot.pdf",sep=""), width =   12, height = 12)
-agg.clades<-resultsagg
-agg.clades<-merge(agg.clades, numberofreads, by="Sample")
-agg.clades$count<-agg.clades$count*agg.clades$ratio
+ resultsagg<-aggregate(ratio~clade+Sample, results.out, sum)
+ if(length(which(resultsagg$clade==""))>0) resultsagg$clade[which(resultsagg$clade=="")]<-"NA"
+# ggplot(resultsagg)+
+#   geom_bar(aes(Sample, ratio, fill=clade),position = "stack", stat = "identity")+
+#   scale_fill_manual(values =  rainbow(length(unique(resultsagg$clade))))+
+#   theme_minimal()+
+#   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+# ggsave(paste(r.path, "Clade_Barplot.pdf",sep=""), width =   12, height = 12)
+ agg.clades<-resultsagg
+ agg.clades<-merge(agg.clades, numberofreads, by="Sample")
+ agg.clades$count<-agg.clades$count*agg.clades$ratio
 
-resultsagg<-aggregate(ratio~Nextclade_pango+Sample, results.out, sum)
-if(length(which(resultsagg$Nextclade_pango==""))>0) resultsagg$Nextclade_pango[which(resultsagg$Nextclade_pango=="")]<-"NA"
-ggplot(resultsagg)+
-  geom_bar(aes(Sample, ratio, fill=Nextclade_pango),position = "stack", stat = "identity")+
-  scale_fill_manual(values =  rainbow(length(unique(resultsagg$Nextclade_pango))))+
-  theme_minimal()+
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
-ggsave(paste(r.path, "Pangolin_Barplot.pdf",sep=""), width =   12, height = 12)
+ resultsagg<-aggregate(ratio~Nextclade_pango+Sample, results.out, sum)
+ if(length(which(resultsagg$Nextclade_pango==""))>0) resultsagg$Nextclade_pango[which(resultsagg$Nextclade_pango=="")]<-"NA"
+# ggplot(resultsagg)+
+#   geom_bar(aes(Sample, ratio, fill=Nextclade_pango),position = "stack", stat = "identity")+
+#   scale_fill_manual(values =  rainbow(length(unique(resultsagg$Nextclade_pango))))+
+#   theme_minimal()+
+#   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+# ggsave(paste(r.path, "Pangolin_Barplot.pdf",sep=""), width =   12, height = 12)
 
 resultsagg<-merge(resultsagg, numberofreads, by="Sample")
 resultsagg$count<-resultsagg$count*resultsagg$ratio
@@ -350,3 +361,5 @@ for (sk in 1:length(samples)) {
   out.clean<-out[,-which(apply(out, 2, function(x) length(grep("-",x)))>0),drop=FALSE] 
   }
 }
+
+

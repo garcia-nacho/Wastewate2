@@ -39,15 +39,17 @@ ENV start=1250
 ENV end=2250
 ENV M=1300
 ENV m=500
-ENV mode=i
+ENV poi="0"
+ENV mode=d
 ENV trim=0
 USER docker
 RUN conda create -n cutadaptenv cutadapt
 USER root
+RUN Rscript -e "install.packages('phylotools')"
 RUN mkdir -p /Data /home/docker/CommonFiles
 COPY CommonFiles/ /home/docker/CommonFiles/
 RUN chmod -R +rwx /home/docker/CommonFiles/* \
     && chmod 777 /Data 
 USER docker
 WORKDIR /Data
-CMD ["sh", "-c", "/home/docker/CommonFiles/WWAnalysis.sh ${qual} ${noise} ${start} ${end} ${m} ${M} ${mode} ${trim}"]
+CMD ["sh", "-c", "/home/docker/CommonFiles/WWAnalysis.sh ${qual} ${noise} ${start} ${end} ${m} ${M} ${mode} ${trim} ${poi}"]

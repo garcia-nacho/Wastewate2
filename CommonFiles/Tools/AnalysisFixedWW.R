@@ -75,7 +75,7 @@ for (i in 1:length(position.files)) {
     }
   }
 }
-
+write.csv(out, "MutationMatrix.csv", row.names = FALSE)
 close(pb)
 
 file.remove(position.files)

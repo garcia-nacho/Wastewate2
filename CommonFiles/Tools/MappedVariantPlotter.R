@@ -77,7 +77,7 @@ ggplot(out.clean)+
   xlab("Sample")+
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
 
-ggsave("RatioVariant_Stacked.pdf",width = 8.27,height = 11.69)
+ggsave("RatioVariantMapped_Stacked.pdf",width = 8.27,height = 11.69)
 
 colnames(out)[1]<-"Variant"
 colnames(out)[2]<-"ReadCount"

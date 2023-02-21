@@ -15,10 +15,11 @@ echo "Analyzing Spike gene from nt "${3}" to "${4}
 echo "Read size between "${5}" and "${6} "nt"
 echo "Mode "${7}
 echo "Trimming "${8}"nt"
-echo ${9}" Technology"
 echo ""
 echo -e "Quality, noise, read size, region to analyze and trimming can be set using these flags: \n -e qual=Q, -e noise=N, -e m=min, -e M=max -e start=S, -e end=E -e trim=20"
 echo "Modes independent or dependent can be set with -e mode=i or -e mode=d"
+echo "Position of interests according to the Spike gene can be set with -e poi="P1,P2,P3" "
+echo "-e poi="auto" will extract all positions with a mixture of bases (10 sigmas) "
 echo "Stay tuned for updates!" 
 echo "Visit us at https://github.com/folkehelseinstituttet/Wastewater_SARS-CoV-2"
 sleep 5s
@@ -32,6 +33,8 @@ Tools=/home/docker/CommonFiles/Tools
 basedir=/Data
 
 mkdir -p /home/docker/results/
+Rscript /home/docker/CommonFiles/Tools/ExternalFileMounter.R
+Rscript /home/docker/CommonFiles/Tools/FolderRenamer.R
 
 source activate nextclade
 echo "Downloading Nextclade database"
@@ -105,10 +108,27 @@ do
 
     rm ${dir%/}.sam
     rm ${dir%/}_voc.sam
+    cat ${dir%/}.filtered.fastq | awk '{if(NR%4==2) print length($1)}' | sort -n | uniq -c > ${dir%/}_read_length.txt
+
     #rm ${dir%/}_voc.sorted.bam
     #rm ${dir%/}_voc.sorted.bam.bai
-      
+    echo "Running AF search"
+    echo ""
+    cp /home/docker/CommonFiles/reference/reference.msh ./reference.msh
+    cp /home/docker/CommonFiles/Tools/mash ./mash
+    seqkit fq2fa ${dir%/}.filtered.fastq -o ${dir%/}.uncompressed.fasta
     rm ${dir%/}.filtered.fastq
+    
+    Rscript /home/docker/CommonFiles/Tools/MashRunner_V2.R
+    mv ${dir%/}_read_length.txt /home/docker/results/${dir%/}_read_length.txt
+    
+    mv ${dir%/}_AF.lineages.csv /home/docker/results/${dir%/}_AF.lineages.csv
+    gzip ${dir%/}_MashMatrix.csv 
+    mv ${dir%/}_MashMatrix.csv.gz /home/docker/results/${dir%/}_MashMatrix.csv.gz
+    rm ${dir%/}.uncompressed.fasta
+    rm ./mash
+    rm ./reference.msh
+
     ${Tools}/FINex2 -f ${dir%/}.sorted.bam > ${dir%/}.noise.tsv 
     cp ${Tools}/bbasereaderHC ./bbasereader
     cat ${dir%/}_consensus.fa ${RefSpike} > spike.cons.fa
@@ -122,6 +142,8 @@ do
     then
       Rscript ${Tools}/AnalysisWW.R $(pwd)/ ${2} ${3} ${4}
       mkdir /home/docker/results/${dir%/}
+      gzip MutationMatrix.csv
+      mv MutationMatrix.csv.gz /home/docker/results/${dir%/}/${dir%/}.MutationMatrix.csv.gz
       mv Variants.fa /home/docker/results/${dir%/}/${dir%/}.variants.fa
       mv VariantResults.xlsx /home/docker/results/${dir%/}/${dir%/}.results.xlsx
       mv Coverage.pdf /home/docker/results/${dir%/}/${dir%/}.coverage.pdf
@@ -137,6 +159,8 @@ do
 
     else
       Rscript ${Tools}/AnalysisWW.R $(pwd)/ ${2} ${3} ${4}
+      gzip MutationMatrix.csv
+      mv MutationMatrix.csv.gz /home/docker/results/${dir%/}.MutationMatrix.csv.gz
       #Rscript ${Tools}/AnalysisFixedWW.R $(pwd)/
       mv Variants.fa /home/docker/results/${dir%/}.variants.fa
       mv VariantResults.xlsx /home/docker/results/${dir%/}.results.xlsx
@@ -147,7 +171,7 @@ do
       mv ${dir%/}.sorted.bam.bai /home/docker/results/${dir%/}.sorted.bam.bai
       mv *_consensus.qual.txt /home/docker/results/${dir%/}_consensus.qual.txt 
       mv ${dir%/}_consensus.fa /home/docker/results/${dir%/}_consensus.fa
-      mv ${dir%/}_voc_depth.tsv /home/docker/results/${dir%/}_voc_depth.tsv 
+      mv ${dir%/}_voc_depth.csv /home/docker/results/${dir%/}_voc_depth.csv 
     fi
 
     rm dummy.csv
@@ -164,7 +188,7 @@ cp -R /home/docker/results /Data/results
 if [ ${7} == d ]
 then
   cd /Data/results
-  Rscript ${Tools}/POIgenerator.R $(pwd)/ ${2} ${3} ${4}
+  Rscript ${Tools}/POIgenerator.R $(pwd)/ ${2} ${3} ${4} ${9}
   for dir2 in $(ls -d */)
   do
     echo "Dependent mode on" ${dir2}
@@ -173,7 +197,8 @@ then
     cp ../poi.temp ./poi.temp 
 
     Rscript ${Tools}/AnalysisWWDep.R $(pwd)/ ${2} ${3} ${4}
-
+    gzip MutationMatrixDep.csv
+    mv MutationMatrixDep.csv.gz ${dir2%/}.MutationMatrixDep.csv.gz
     mv ${dir2%/}.variants.fa /Data/results/${dir2%/}.variants.fa
     mv *pdf /Data/results/
     mv ${dir2%/}.results.xlsx /Data/results/${dir2%/}.results.xlsx
@@ -182,6 +207,7 @@ then
     mv ${dir2%/}.sorted.bam.bai /Data/results/${dir2%/}.sorted.bam.bai
     mv *_consensus.qual.txt /Data/results/${dir2%/}_consensus.qual.txt 
     mv ${dir2%/}_consensus.fa /Data/results/${dir2%/}_consensus.fa
+    mv ${dir2%/}.MutationMatrix.csv.gz /Data/results/${dir2%/}.MutationMatrix.csv.gz
     rm spike.cons.aligned.fa
     mv VariantsDependent.fa /Data/results/${dir2%/}.variants.dependent.fa
     mv VariantResultsDependent.xlsx /Data/results/${dir2%/}.results.dependent.xlsx
@@ -192,7 +218,7 @@ then
   done
 fi
 
-rm poi.temp
+mv poi.temp /Data/results/poi.tsv
 
 if [ ${7} == d ]
 then
@@ -210,11 +236,11 @@ source activate nextclade
 nextclade --input-fasta sequences/merged_variants.fa --input-dataset /home/docker/nc_sars-cov-2 --output-csv Nextclade.results.csv --output-fasta merged_variants.aligned.fa
 conda deactivate
 Rscript ${Tools}/postanalysisWW.R
-
+Rscript ${Tools}/MashPlotter.R
 
 #post analysis Fixed
 mkdir bam analysis QC
- 
+mv /Data/results/poi.tsv /Data/results/QC/PositionsAnalyzed.tsv 
 mkdir analysis/FixedMode
 mv /Data/results/*.bam /Data/results/bam
 mv /Data/results/*.bai /Data/results/bam
@@ -231,6 +257,7 @@ mv /Data/results/Nextclade.results.csv /Data/results/analysis/Variants.nextclade
 rm /Data/results/Rplots.pdf
 rm /Data/results/merged_variants*.fasta
 rm /Data/results/merged_variants*.csv
+
 #To be changed after adding fixed mode
 
 
@@ -239,12 +266,29 @@ rm -rf /Data/results/analysis/FixedMode
 
 cd /Data/results
 cp ${Tools}/bbasereaderHC ./bbasereader
-Rscript /home/docker/CommonFiles/Tools/AnalysisSingleMuts.R $(pwd)/ ${2}
+Rscript /home/docker/CommonFiles/Tools/AnalysisSingleMuts.R $(pwd)/ ${2} ${9}
 Rscript /home/docker/CommonFiles/Tools/NoiseMosaic.R $(pwd)/ ${2}
 rm Rplots.pdf
 Rscript /home/docker/CommonFiles/Tools/MappedVariantPlotter.R
-mv /Data/results/*.pdf /Data/results/analysis
-mv /Data/results/*.xlsx /Data/results/analysis
+
 rm ./bbasereader
 mv /Data/VariantSpike.fasta /Data/results/analysis/ReferencesSpike.fasta
 mv /Data/results/*_voc_depth.csv /Data/results/QC
+mkdir /Data/results/analysis/SankeyPlots 
+mv /Data/results/analysis/*Sankeyplot* /Data/results/analysis/SankeyPlots
+mv /Data/results/analysis/Clade_Barplot.pdf /Data/results/QC
+mv /Data/results/analysis/CountVariant_groupped_byVariant.pdf /Data/results/analysis/CountVariantMapped_byVariant.pdf
+mv /Data/results/analysis/CountVariant_groupSample.pdf /Data/results/analysis/CountVariantMapped_bySample.pdf 
+mv /Data/results/analysis/CoverageMosaic.pdf /Data/results/QC
+mv /Data/results/analysis/NoiseMosaic.pdf /Data/results/QC
+mv /Data/results/analysis/Pangolin_Barplot.pdf /Data/results/QC
+mv /Data/results/analysis/RatioVariant_groupSample.pdf /Data/results/analysis/RatioVariantMapped_bySample.pdf
+mv /Data/results/analysis/RatioVariant_groupVariant.pdf /Data/results/analysis/RatioVariantMapped_byVariant.pdf  
+mv /Data/results/analysis/ReferencesSpike.fasta /Data/results/QC
+mv /Data/results/analysis/Variants.nextclade /Data/results/QC
+mv /Data/results/*AF.lineages.csv /Data/results/QC
+mv /Data/results/*.gz /Data/results/QC
+mv /Data/results/*read_length.txt /Data/results/QC
+mv /Data/results/*.pdf /Data/results/analysis
+mv /Data/results/*.xlsx /Data/results/analysis
+

@@ -19,6 +19,10 @@ path<-path[1]
 poi<-read.csv("poi.temp")
 poi<-poi$x
 bam.path<-list.files(path, pattern = ".*bam$",full.names = TRUE)
+
+sizes<-file.info(bam.path)$size
+if(length(which(sizes<5000))>0) bam.path<-bam.path[-which(sizes<5000)]
+
 ref.path<-paste(path,"spike.cons.aligned.fa",sep = "")
 cores<-as.numeric(detectCores())-2
 noise.path<-list.files(path, pattern = ".*noise.tsv",full.names = TRUE)
@@ -100,7 +104,7 @@ close(pb)
 out<-as.data.frame(out)
 col.to.remove<-which(apply(out[,-1],2,function(x)length(which(is.na(x))))> nrow(out)*0.7 )
 if(length(col.to.remove)>0) out<-out[,-which(colnames(out) %in% names(col.to.remove))]
-
+write.csv(out, "MutationMatrixDep.csv", row.names = FALSE)
 file.remove(position.files)
 
 
@@ -128,7 +132,7 @@ read.co<-sum(variantable$Freq)/50
 
 variantable<-variantable[which(variantable$Freq>read.co),]
 
-if(length(grep("//", variantable$Var1))) variantable<-variantable[-grep("//", variantable$Var1),]
+if(length(grep("//", variantable$Var1))>0) variantable<-variantable[-grep("//", variantable$Var1),]
 if(allpos & length(grep("NA", variantable$Var1))>0)variantable<-variantable[-grep("NA", variantable$Var1),]
 
 if(exists("variant.out")) try(rm(variant.out))
@@ -146,8 +150,13 @@ for (i in 1:nrow(variantable)) {
 }
 
 
-pure.variants<-variant.out[-grep("D", variant.out$variant),]
+if(length(grep("D", variant.out$variant))>0){ 
+  pure.variants<-variant.out[-grep("D", variant.out$variant),]
+}else{
+  pure.variants<-variant.out
+}
 row.t.r<-vector()
+
 for (i in 1:nrow(variant.out)) {
   if(!variant.out$variantID[i] %in% pure.variants$variantID){
   signature<- as.character(variant.out[i,grep("P_", colnames(variant.out))])
@@ -162,10 +171,16 @@ for (i in 1:nrow(variant.out)) {
   }
   }
 }
-variant.out<-variant.out[-which(variant.out$variantID %in% pure.variants$variantID),]
+if(length(which(variant.out$variantID %in% pure.variants$variantID))>0){ 
+  variant.out<-variant.out[-which(variant.out$variantID %in% pure.variants$variantID),]
+}
 
-if(nrow(variant.out)>0){ 
-  pure.variants<-rbind(pure.variants, variant.out)  
+if(nrow(variant.out)>0){
+  if(nrow(pure.variants)>0){ 
+    pure.variants<-rbind(pure.variants, variant.out)
+  }else{
+    pure.variants<-variant.out
+  }  
 }
 variant.out<-pure.variants
 

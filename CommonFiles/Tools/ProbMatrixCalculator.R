@@ -31,9 +31,15 @@ for (i in 1:length(poi)) {
       #No prior
       P.L<-1/length(lineages)
       AP.L<-(length(lineages)-1)/length(lineages)
+      
+      #No prior
+      P.L<-1/10
+      AP.L<-(10-1)/10
+      
+      #Include penalty
         
-     dummym[k,j]<-   (P.L_M * P.L) /((P.L_M * P.L)+(AP.L_M * AP.L))
-     #dummym[k,j]<-   P.L_M
+     #dummym[k,j]<-   (P.L_M * P.L) /((P.L_M * P.L)+(AP.L_M * AP.L))
+     dummym[k,j]<-   P.L_M
     }
   }
   dummym<-as.data.frame(dummym)

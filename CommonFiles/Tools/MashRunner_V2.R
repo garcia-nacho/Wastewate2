@@ -110,5 +110,5 @@ write.csv(lineages, gsub(".uncompressed.fasta","_AF.lineages.csv",fasta.to.read)
  if(length(empty)>0) reads<-reads[-empty,]
  out.umap$SeqID<-reads$seq.name
 
-write.csv(out.umap, gsub(".uncompressed.fasta","_MashMatrix.csv",fasta.to.read),row.names = FALSE)
+#write.csv(out.umap, gsub(".uncompressed.fasta","_MashMatrix.csv",fasta.to.read),row.names = FALSE)
 

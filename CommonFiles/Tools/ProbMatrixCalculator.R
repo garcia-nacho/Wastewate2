@@ -1,10 +1,13 @@
 library(seqinr)
 
-refs<-read.fasta("/media/nacho/Data/wastewater/ReferencesProb/Spike17022022.fasta")
+refs<-read.fasta("/media/nacho/Data/wastewater/ReferencesProb/Spike28082023.fasta")
 
 poi<-c(1250:2250)
 
+#Cleaning identical spikes.
+
 lineages<-unique(gsub(".*_","", names(refs)))
+
 bases<-c("a","t","c","g","-")
 #Generation of the probability matrix
 #Parallel here
@@ -25,12 +28,12 @@ for (i in 1:length(poi)) {
       AP.L_M<-length(which(names(base.m2)!=lineages[j] & base.m2==k))/ length(which(names(base.m2)!=lineages[j]))
       
       #Priors based on data
-      P.L<-length(which(names(base.m2)==lineages[j]))/length(base.m2)
-      AP.L<- length(which(names(base.m2)!=lineages[j]))/length(base.m2)
+      #P.L<-length(which(names(base.m2)==lineages[j]))/length(base.m2)
+      #AP.L<- length(which(names(base.m2)!=lineages[j]))/length(base.m2)
       
       #No prior
-      P.L<-1/length(lineages)
-      AP.L<-(length(lineages)-1)/length(lineages)
+      #P.L<-1/length(lineages)
+      #AP.L<-(length(lineages)-1)/length(lineages)
       
       #No prior
       P.L<-1/10
@@ -38,8 +41,8 @@ for (i in 1:length(poi)) {
       
       #Include penalty
         
-     #dummym[k,j]<-   (P.L_M * P.L) /((P.L_M * P.L)+(AP.L_M * AP.L))
-     dummym[k,j]<-   P.L_M
+     dummym[k,j]<-   (P.L_M * P.L) /((P.L_M * P.L)+(AP.L_M * AP.L))
+     #dummym[k,j]<-   P.L_M
     }
   }
   dummym<-as.data.frame(dummym)

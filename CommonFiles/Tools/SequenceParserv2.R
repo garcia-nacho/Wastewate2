@@ -39,7 +39,7 @@ for (i in 1:length(uniqueregions)) {
   pangos.df<-as.data.frame(table(pangos))
   pangos.df$Freq<-pangos.df$Freq/sum(pangos.df$Freq)
   pangos.df$Hash<-paste(strsplit(uniqueregions[[i]],"")[[1]][1:10], collapse = "")
-
+  
   
   if(length(unique(pangos))==1){
     df$QC[which(df$hash==uniqueregions[i])]<-"OK"
@@ -66,15 +66,15 @@ for (i in 1:length(uniqueregions)) {
         new.lin<-NA
         if(noe==1) running<-FALSE
       }
-        noe<-noe-1
+      noe<-noe-1
     }
     if(is.na(new.lin)){
       df$Corrected[which(df$hash==uniqueregions[i])]<-paste(new.lin,".",paste(strsplit(uniqueregions[[i]],"")[[1]][1:10], collapse = "") ,".X",sep = "")
     }else{
       df$Corrected[which(df$hash==uniqueregions[i])]<-paste(new.lin,".X",sep = "")
     }
-      
-      
+    
+    
   }
   
   pangos.df$Lineage<-df$Corrected[which(df$hash==uniqueregions[i])][1]

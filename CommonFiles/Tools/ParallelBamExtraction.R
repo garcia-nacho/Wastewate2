@@ -24,21 +24,23 @@ n.start<-as.numeric(arg[2])
 n.end<- as.numeric(arg[3])
 poicurrent<- arg[4]
 
-#co.n<-0.1
-#n.start<-1250
-#n.end<-2250
+# co.n<-0.1
+# n.start<-1250
+# n.end<-2250
+# poicurrent<-"G22895C, T22896A, G22898A, A22910G, C22916T,G23012A, C23013A, T23018C, T23019C, C23271T, C23423T, A23604G"
 #1355	28548	waste011.40_Bergen	G	0,718649292	0,004937526	S:L452R
 #1841	26601	waste011.40_Bergen	G	0,986955378	0,005115047	S:D614G
 #2037	28145	waste011.40_Bergen	G	0,983798188	0,004972753	S:N679K
 #1320	12470	waste011.40_Oslo	G	0,973857257	0,007451126	S:N440K
 #1513	11999	waste016.34_Oslo	C	0,875239603	0,00759624	S:Y505H
 
-#pmatrixfile<-"/media/nacho/Data/DockerImages/Wastewater_SARS-CoV-2/CommonFiles/reference/ProbMatrix.csv"
-#reference<-read.fasta("/media/nacho/Data/DockerImages/Wastewater_SARS-CoV-2/CommonFiles/reference/SpikeRef.fa")
-#file.copy("/media/nacho/Data/DockerImages/Wastewater_SARS-CoV-2/CommonFiles/Tools/bam2msa","bam2msa")
-#file.copy("/media/nacho/Data/DockerImages/Wastewater_SARS-CoV-2/CommonFiles/reference/SpikeRef.fa","SpikeRef.fa")
-#refmsa<-"/media/nacho/Data/DockerImages/Wastewater_SARS-CoV-2/CommonFiles/reference/MSA_Refs.tsv.gz"
-#refmsaid<-"/media/nacho/Data/DockerImages/Wastewater_SARS-CoV-2/CommonFiles/reference/MSA_RefsID.csv"
+# pmatrixfile<-"/media/nacho/Data/DockerImages/Wastewater_SARS-CoV-2/CommonFiles/reference/ProbMatrix.csv"
+# reference<-read.fasta("/media/nacho/Data/DockerImages/Wastewater_SARS-CoV-2/CommonFiles/reference/SpikeRef.fa")
+# file.copy("/media/nacho/Data/DockerImages/Wastewater_SARS-CoV-2/CommonFiles/Tools/bam2msa","bam2msa")
+# file.copy("/media/nacho/Data/DockerImages/Wastewater_SARS-CoV-2/CommonFiles/reference/SpikeRef.fa","SpikeRef.fa")
+# refmsa<-"/media/nacho/Data/DockerImages/Wastewater_SARS-CoV-2/CommonFiles/reference/MSA_Refs.tsv.gz"
+# refmsaid<-"/media/nacho/Data/DockerImages/Wastewater_SARS-CoV-2/CommonFiles/reference/MSA_RefsID.csv"
+# hasshes<-"/media/nacho/Data/DockerImages/Wastewater_SARS-CoV-2/CommonFiles/reference/variant_hash.csv"
 
 pmatrixfile<-"/home/docker/CommonFiles/reference/ProbMatrix.csv"
 reference<-read.fasta("/home/docker/CommonFiles/reference/SpikeRef.fa")
@@ -46,6 +48,7 @@ file.copy("/home/docker/CommonFiles/Tools/bam2msa","bam2msa")
 file.copy("/home/docker/CommonFiles/reference/SpikeRef.fa","SpikeRef.fa")
 refmsa<-"/home/docker/CommonFiles/reference/MSA_Refs.tsv.gz"
 refmsaid<-"/home/docker/CommonFiles/reference/MSA_RefsID.csv"
+hasshes<-"/home/docker/CommonFiles/reference/variant_hash.csv"
 
 reference<-unlist(reference)
 
@@ -89,7 +92,27 @@ stopCluster(cluster.cores)
 print("Calculating noise")
 file.copy(refmsa, "MSAFastas/Reference.b2f.tsv.gz")
 
-if(poicurrent!="0" & poicurrent!="auto") poicurrent<-as.numeric(gsub(" ","",unlist(base::strsplit(poicurrent, ","))))
+if(poicurrent!="0" & poicurrent!="auto"){
+  poicurrent<-(gsub(" ","",unlist(base::strsplit(poicurrent, ","))))
+  positions<-toupper(poicurrent)
+  
+  positions<-gsub("A|T|C|G", "", positions)
+  positions<-as.numeric(positions)
+  if(length(which(is.na(positions)))>0){
+    positions<-positions[-which(is.na(positions))]
+  }
+  
+  positions<-positions[order(positions)]
+  
+  if(positions[1]>21563 & positions[1]<25384 ){
+    positions<- positions-21563+1
+  }else if(positions[1]>1 & positions[1] <38321){
+    positions<-positions
+  }else{
+    positions<-"auto"
+  }
+  poicurrent<-positions
+} 
 
 noise.path<-list.files(pattern = ".*noise.tsv",full.names = TRUE, recursive = TRUE)
 
@@ -156,6 +179,7 @@ registerDoSNOW(cluster.cores)
 out.par<-foreach(cf=1:length(compressed), .verbose=FALSE, .packages = c("data.table","seqinr"), .options.snow = opts) %dopar%{
 
   target.file<-gsub(".gz","",compressed[cf])
+  if(file.exists(target.file)) file.remove(target.file)
   system(paste("gunzip -c ", compressed[cf], " > ",target.file,sep = ""))
   
   df<-fread(target.file, sep = "\t")
@@ -163,7 +187,7 @@ out.par<-foreach(cf=1:length(compressed), .verbose=FALSE, .packages = c("data.ta
   
   lineages<-list()
   lineages.ohe<-list()
-  if(nrow(df)>0){
+  if(nrow(df)>1){
   for (i in 1:nrow(df)) {
     ins<-which(unlist(strsplit(df$ref_msa[i], ""))=="-")
     if(length(ins)>0 ){
@@ -306,7 +330,7 @@ plinmatrix<-plinmatrix+anti.plinmatrix
   plin.dum<-as.data.frame(plinmatrix)
   
   plin.dum$Seq<-lineages.compact$Seq
-  plin.dum<-plin.dum[-which(duplicated(plin.dum)),]
+  if(length(which(duplicated(plin.dum)))>0) plin.dum<-plin.dum[-which(duplicated(plin.dum)),]
   
   index<-vector()
   for (i in 1:nrow(lineages.compact.agg)) {
@@ -319,7 +343,7 @@ plinmatrix<-plinmatrix+anti.plinmatrix
   #To return
   lineages.compact.out<-lineages.compact.agg
   
-  plin.dum<-as.data.frame(plinmatrix[index,])
+  plin.dum<-as.data.frame(plinmatrix[index,,drop=FALSE])
   plin.dum$Seq<-lineages.compact.agg$Seq
   plin.dum$Sample<-lineages.compact.agg$Sample
   
@@ -345,7 +369,10 @@ plinmatrix<-plinmatrix+anti.plinmatrix
   
   #To return
   mut.out<-sin.mut
+  rm(plin.dum,df,lin.tab,pmatrix,total.lin,sin.mut,  lineages.compact.agg, lineages.ohe, anti.pmatrix, anti.plinmatrix)
   rtnlist<-list(output.pango,output.pango.clean,lineages.compact.out,plin.out,mut.out)
+  rm(output.pango,output.pango.clean,lineages.compact.out,plin.out,mut.out)
+  gc()
   names(rtnlist)<-c("Pango","PangoClean","Lineages","Mtrx","Mutations")
   return(rtnlist)
   }else{
@@ -381,6 +408,7 @@ if(length( which(!unlist(miss)))>0) Dlist<-Dlist[-which(!unlist(miss))]
 Mutation.df<-do.call(rbind, Dlist)
 
 
+rm(out.par)
 #Reference asignment method2
 
 refids<-read.csv(refmsaid)
@@ -427,24 +455,85 @@ linx[[i]]<-lineages.df.ref$ID[which(lineages.df.ref$Seq==lineages.df.ref$Seq[i])
 
 lineages.df.ref$ID2<-unlist(lapply(linx, function(x)paste(gsub("_SQ.*","",x),collapse = "/")))
 
-lineages.df$PangoLineagesMatched<-lineages.df.ref$ID2[match(lineages.df$PangoLineage, lineages.df.ref$PangoLineage)]
+#lineages.df$PangoLineagesMatched<-lineages.df.ref$ID2[match(lineages.df$PangoLineage, lineages.df.ref$PangoLineage)]
+lineages.df$PangoSupport<-NA
+lineages.df$PangoSupport.Count<-NA
+lineages.df$PangoLineagesMatched<-NA
+
+variant.hash<-read.csv(hasshes)
+
+
+for (i in 1:nrow(lineages.df)) {
+  lin.tab<-as.data.frame(table(lineages.df.ref$ID2[which(lineages.df.ref$PangoLineage==lineages.df$PangoLineage[i])]))
+  NA.indx<-grep("NA\\..*\\.X",lin.tab$Var1)
+  if(length(NA.indx)>0){
+    for (k in 1:length(NA.indx)) {
+      lin.tab2<-as.data.frame(table(variant.hash$pangos[which(variant.hash$Lineage==as.character(lin.tab$Var1[NA.indx[k]]))]))
+      lin.tab2$Freq<-lin.tab2$Freq*lin.tab$Freq[NA.indx[k]]
+      lin.tab<-rbind(lin.tab,lin.tab2)
+    }
+  lin.tab<-lin.tab[- grep("NA\\..*\\.X",lin.tab$Var1),]
+  lin.tab$Var1<-as.character(lin.tab$Var1)
+  
+  #Collapse lineages
+  
+  lin.tab<-aggregate(Freq~Var1,lin.tab,sum)
+  }
+  
+  if(nrow(lin.tab)==1){
+    lineages.df$PangoLineagesMatched[i]<-as.character(lin.tab$Var1[1])
+    lineages.df$PangoSupport[i]<-1
+    lineages.df$PangoSupport.Count[i]<-sum(lin.tab$Freq)
+  }
+  if(nrow(lin.tab)>1){
+    lin.tab<-lin.tab[order(lin.tab$Freq, decreasing = TRUE),]
+    lineages.df$PangoLineagesMatched[i]<-as.character(lin.tab$Var1[1])
+    lineages.df$PangoSupport[i]<-lin.tab$Freq[1]/sum(lin.tab$Freq)
+    lineages.df$PangoSupport.Count[i]<-sum(lin.tab$Freq)
+  }
+  
+}
+
 
 if(length(which(is.na(lineages.df$PangoLineagesMatched)))>0){
   lineages.df$PangoLineagesMatched[which(is.na(lineages.df$PangoLineagesMatched))]<-"Unclassified"  
 }
 
 
+#Env stored 
+
 
 # UMAP --------------------------------------------------------------------
 
 
 print("Dimension reduction...")
-umapping<-umap(as.matrix(probMtrx[which(lineages.df$Count>10),-c(which(colnames(probMtrx) %in% c("Seq","Sample")))]))
+#umapping<-umap(as.matrix(probMtrx[which(lineages.df$Count>10),-c(which(colnames(probMtrx) %in% c("Seq","Sample")))]))
+#lineages.clean<-lineages.df[which(lineages.df$Count>10),]
+probMtrx<-rbind(probMtrx, probMtrx.ref)
+umapping<-uwot::umap(as.matrix(probMtrx[-c(which(colnames(probMtrx) %in% c("Seq","Sample")))]))
   
-lineages.clean<-lineages.df[which(lineages.df$Count>10),]
+lineages.clean<-lineages.df
 
-lineages.clean$X<-umapping$layout[,1]
-lineages.clean$Y<-umapping$layout[,2]
+lineages.clean$X<-umapping[c(1:nrow(lineages.clean)),1]
+lineages.clean$Y<-umapping[c(1:nrow(lineages.clean)),2]
+
+#lineages.clean$X<-umapping$layout[,1]
+#lineages.clean$Y<-umapping$layout[,2]
+
+
+if(length(grep("NA\\..*\\.X", lineages.clean$PangoLineagesMatched))>0){
+  to.match<-unique(lineages.clean$PangoLineagesMatched[grep("NA\\..*\\.X", lineages.clean$PangoLineagesMatched)])  
+
+
+for(tm in c(1:length(to.match))){
+  variant.temp<-variant.hash[which(variant.hash$Lineage==to.match[tm]),]
+  variant.temp<-variant.temp[order(variant.temp$Freq, decreasing = TRUE),]
+  variant.temp<-variant.temp[c(1:min(3,nrow(variant.temp))),]
+  variant.temp$NewID<-paste(variant.temp$pangos,":" ,round((variant.temp$Freq)*100,0),"%" ,sep = "")
+  newid<-paste(variant.temp$NewID, collapse = "/")
+  lineages.clean$PangoLineagesMatched[which(lineages.clean$PangoLineagesMatched==to.match[tm])]<-newid
+}
+}
 
 samples.vec<-unique(lineages.clean$Sample)
 experiments<-unique(gsub("\\..*","",samples.vec))
@@ -474,19 +563,27 @@ lineages.clean$Week<-gsub(".*\\.","",gsub("_.*","",lineages.clean$Sample))
 uniqueaa<-lineages.clean[-which(duplicated(lineages.clean$Mut.aa)),]
 
 ggplot(lineages.clean[-grep("Pos|Neg", lineages.clean$Sample),])+
-  geom_point(aes(X,Y,col=Location,size=Count),alpha=0.3)+
+  geom_point(aes(X,Y,col=Location,size=Ratio),alpha=0.3)+
   scale_colour_manual(values = rainbow(length(unique(lineages.clean$Location))))+
   theme_minimal()+
-  facet_wrap(~Week)  
+  facet_wrap(~as.numeric(Week))  
 
 
 ptl2<- ggplotly(ggplot(lineages.clean[-grep("Pos|Neg", lineages.clean$Sample),])+
-           geom_jitter(aes(X,Y,col=PangoLineagesMatched,size=Count, label=Mut.aa),alpha=0.3)+
+           geom_jitter(aes(X,Y,col=PangoLineagesMatched,size=Ratio, label=Mut.aa),alpha=0.3)+
            scale_colour_manual(values = rainbow(length(unique(lineages.clean$PangoLineagesMatched))))+
            theme_minimal()+
            facet_wrap(~Week+Location), tooltip = c("PangoLineagesMatched", "Count","Mut.aa") )
 
 saveWidget(partial_bundle(ptl2), "TotalLineageMap.html")
+
+ptl2<- ggplotly(ggplot(lineages.clean[-grep("Pos|Neg", lineages.clean$Sample),])+
+                  geom_jitter(aes(X,Y,col=PangoLineagesMatched,size=Ratio, label=Mut.aa),alpha=0.3)+
+                  scale_colour_manual(values = rainbow(length(unique(lineages.clean$PangoLineagesMatched))))+
+                  theme_minimal()+
+                  facet_wrap(~as.numeric(Week)), tooltip = c("PangoLineagesMatched", "Count","Mut.aa") )
+
+saveWidget(partial_bundle(ptl2), "TotalLineageMap2.html")
 
 
 weeks<-unique(lineages.clean$Week[-grep("Pos|Neg", lineages.clean$Sample)])
@@ -502,7 +599,7 @@ weeks<-weeks[order(as.numeric(weeks),decreasing = TRUE)]
 
 
 
-write_xlsx(lineages.clean[,c(6,1,8,2,9,4,5,7,12,13,10,11)], "LineagesClean.xlsx")
+write_xlsx(lineages.clean[,c(6,1,8,2,11,4,5,7,14,15,12,13)], "LineagesClean.xlsx")
 
 lineages.agg<-aggregate(Count~PangoLineagesMatched+ Sample, lineages.clean,sum)
 total.agg<-aggregate(Count~Sample, lineages.clean,sum)

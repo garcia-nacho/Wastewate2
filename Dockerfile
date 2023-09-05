@@ -48,6 +48,7 @@ USER root
 RUN Rscript -e "install.packages('phylotools')"
 RUN Rscript -e "install.packages(c('umap','plotly','htmlwidgets'))"
 RUN wget https://github.com/jgm/pandoc/releases/download/3.1.1/pandoc-3.1.1-1-amd64.deb && dpkg -i pandoc-3.1.1-1-amd64.deb
+RUN Rscript -e "install.packages('uwot'))"
 RUN mkdir -p /Data /home/docker/CommonFiles
 COPY CommonFiles/ /home/docker/CommonFiles/
 RUN chmod -R +rwx /home/docker/CommonFiles/* \

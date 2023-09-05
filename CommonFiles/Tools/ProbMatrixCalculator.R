@@ -32,12 +32,12 @@ for (i in 1:length(poi)) {
       #AP.L<- length(which(names(base.m2)!=lineages[j]))/length(base.m2)
       
       #No prior
-      #P.L<-1/length(lineages)
-      #AP.L<-(length(lineages)-1)/length(lineages)
+      P.L<-1/length(lineages)
+      AP.L<-(length(lineages)-1)/length(lineages)
       
       #No prior
-      P.L<-1/10
-      AP.L<-(10-1)/10
+      #P.L<-1/10
+      #AP.L<-(10-1)/10
       
       #Include penalty
         

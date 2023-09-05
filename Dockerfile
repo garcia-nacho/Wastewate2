@@ -48,6 +48,15 @@ USER root
 RUN Rscript -e "install.packages('phylotools')"
 RUN Rscript -e "install.packages(c('umap','plotly','htmlwidgets'))"
 RUN wget https://github.com/jgm/pandoc/releases/download/3.1.1/pandoc-3.1.1-1-amd64.deb && dpkg -i pandoc-3.1.1-1-amd64.deb
+RUN apt-get update \
+	&& apt-get install -y --no-install-recommends \
+		gfortran \
+        gcc-10
+RUN rm /usr/bin/gcc /usr/bin/gcc-ar /usr/bin/gcc-nm /usr/bin/gcc-ranlib \
+    && ln /usr/bin/gcc-nm-10 /usr/bin/gcc-nm \
+    && ln /usr/bin/gcc-ar-10 /usr/bin/gcc-ar \
+    && ln /usr/bin/gcc-10 /usr/bin/gcc \
+    && ln /usr/bin/gcc-ranlib-10 /usr/bin/gcc-ranlib 
 RUN Rscript -e "install.packages('uwot')"
 RUN mkdir -p /Data /home/docker/CommonFiles
 COPY CommonFiles/ /home/docker/CommonFiles/
@@ -56,3 +65,4 @@ RUN chmod -R +rwx /home/docker/CommonFiles/* \
 USER docker
 WORKDIR /Data
 CMD ["sh", "-c", "/home/docker/CommonFiles/WWAnalysis.sh ${qual} ${noise} ${start} ${end} ${m} ${M} ${mode} ${trim} ${poi}"]
+#USER root

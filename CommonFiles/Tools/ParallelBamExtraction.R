@@ -88,6 +88,12 @@ out.par<-foreach(i=1:length(samples.to.analyze), .verbose=FALSE, .options.snow =
 stopCluster(cluster.cores)
 }
 
+if(dir.exists("/Data/results/OldResults")){
+  oldfiles<-list.files("/Data/results/OldResults")
+  file.rename(oldfiles,gsub(".*/","MSAFastas/",oldfiles))
+}
+
+
 # Noise co calculation -------------------------------------------------------
 print("Calculating noise")
 file.copy(refmsa, "MSAFastas/Reference.b2f.tsv.gz")

@@ -14,6 +14,7 @@ echo "Quality:"${1}"/Noise Cutoff:"${2}
 echo "Analyzing Spike gene from nt "${3}" to "${4}
 echo "Read size between "${5}" and "${6} "nt"
 echo "Trimming "${8}"nt"
+echo "Additional sites "${9}
 echo ""
 echo -e "Quality, noise, read size, region to analyze and trimming can be set using these flags: \n -e qual=Q, -e noise=N, -e m=min, -e M=max -e start=S, -e end=E -e trim=20"
 echo "Position of interests according to the Spike gene can be set with -e poi="P1,P2,P3" "
@@ -39,11 +40,12 @@ echo "Downloading Nextclade database"
 nextclade dataset get --name 'sars-cov-2' --output-dir '/home/docker/nc_sars-cov-2'
 conda deactivate
 
-echo ""
-echo "Preparing Spike References"
-cat /home/docker/CommonFiles/Variants/*.fa* > /Data/variantRefs.fasta
-Rscript /home/docker/CommonFiles/Tools/Spike_Extractor.R
-rm /Data/variantRefs.fasta
+#Legacy
+#echo ""
+#echo "Preparing Spike References"
+#cat /home/docker/CommonFiles/Variants/*.fa* > /Data/variantRefs.fasta
+#Rscript /home/docker/CommonFiles/Tools/Spike_Extractor.R
+#rm /Data/variantRefs.fasta
 
 for dir in $(ls -d */)
 do
@@ -94,33 +96,37 @@ do
     minimap2 --secondary=no -ax map-ont ${RefSpike} ${dir%/}.filtered.fastq > ${dir%/}.sam  
     samtools view -F 1024 -F 256 -F4 -F 2048 -bS ${dir%/}.sam | samtools sort -o ${dir%/}.sorted.bam
     samtools index ${dir%/}.sorted.bam
-
-    minimap2 --secondary=no -ax map-ont /Data/VariantSpike.fasta ${dir%/}.filtered.fastq > ${dir%/}_voc.sam  
-  
-    Rscript /home/docker/CommonFiles/Tools/SamParser.R
+    
+    #Legacy
+    #minimap2 --secondary=no -ax map-ont /Data/VariantSpike.fasta ${dir%/}.filtered.fastq > ${dir%/}_voc.sam  
+    #Rscript /home/docker/CommonFiles/Tools/SamParser.R
 
     ls
     samtools mpileup -aa -A -d 0 -q 0 --reference ${RefSpike} ./${dir%/}.sorted.bam | ivar consensus -t 0 -n N -m 20 -p ${dir%/}_consensus
 
     rm ${dir%/}.sam
-    rm ${dir%/}_voc.sam
+    #Legacy
+    #rm ${dir%/}_voc.sam
     cat ${dir%/}.filtered.fastq | awk '{if(NR%4==2) print length($1)}' | sort -n | uniq -c > ${dir%/}_read_length.txt
 
     #rm ${dir%/}_voc.sorted.bam
     #rm ${dir%/}_voc.sorted.bam.bai
-    echo "Running AF search"
-    echo ""
-    cp /home/docker/CommonFiles/reference/reference.msh ./reference.msh
-    cp /home/docker/CommonFiles/Tools/mash ./mash
-    seqkit fq2fa ${dir%/}.filtered.fastq -o ${dir%/}.uncompressed.fasta
-    rm ${dir%/}.filtered.fastq
+
+    #Legacy
+    #echo "Running AF search"
+    #echo ""
+    #cp /home/docker/CommonFiles/reference/reference.msh ./reference.msh
+    #cp /home/docker/CommonFiles/Tools/mash ./mash
     
-    Rscript /home/docker/CommonFiles/Tools/MashRunner_V2.R
-    mv ${dir%/}_read_length.txt /home/docker/results/${dir%/}_read_length.txt
-    mv ${dir%/}_AF.lineages.csv /home/docker/results/${dir%/}_AF.lineages.csv
-    rm ${dir%/}.uncompressed.fasta
-    rm ./mash
-    rm ./reference.msh
+    #seqkit fq2fa ${dir%/}.filtered.fastq -o ${dir%/}.uncompressed.fasta
+    #rm ${dir%/}.filtered.fastq
+    
+    #Rscript /home/docker/CommonFiles/Tools/MashRunner_V2.R
+    #mv ${dir%/}_read_length.txt /home/docker/results/${dir%/}_read_length.txt
+    #mv ${dir%/}_AF.lineages.csv /home/docker/results/${dir%/}_AF.lineages.csv
+    #rm ${dir%/}.uncompressed.fasta
+    #rm ./mash
+    #rm ./reference.msh
 
     ${Tools}/FINex2 -f ${dir%/}.sorted.bam > ${dir%/}.noise.tsv 
     cat ${dir%/}_consensus.fa ${RefSpike} > spike.cons.fa
@@ -155,7 +161,9 @@ cp -R /home/docker/results /Data/results
 
     if [ -d "/Previous" ]
     then
+    echo "======================="
     echo "Integrating old results"
+    echo "======================="
     mkdir /Data/results/OldResults
     cp /Previous/* /Data/results/OldResults
     fi
@@ -179,18 +187,19 @@ Rscript /home/docker/CommonFiles/Tools/ParallelBamExtraction.R ${2} ${3} ${4} ${
 mv *.html analysis
 mv *Sankeyplot.Mutations.pdf analysis/SankeyPlots
 
-Rscript /home/docker/CommonFiles/Tools/MappedVariantPlotter.R
-Rscript /home/docker/CommonFiles/Tools/MashPlotter.R
+#Legacy
+#Rscript /home/docker/CommonFiles/Tools/MappedVariantPlotter.R
+#Rscript /home/docker/CommonFiles/Tools/MashPlotter.R
 
-mkdir /Data/results/analysis/Legacy
-mv CountVariant_groupped_byVariant.pdf /Data/results/analysis/Legacy/CountVariantMapped_groupped_byVariant.pdf
-mv CountVariant_groupSample.pdf /Data/results/analysis/Legacy/CountVariantMapped_groupSample.pdf
-mv *tMash*.pdf /Data/results/analysis/Legacy
-mv VariantMappedReads.xlsx /Data/results/analysis/Legacy
-mv AF_lineages.xlsx /Data/results/analysis/Legacy/VariantMashReads.xlsx
-mv RatioVariant_groupSample.pdf /Data/results/analysis/Legacy/RatioVariantMapped_groupSample.pdf
-mv RatioVariant_groupVariant.pdf /Data/results/analysis/Legacy/RatioVariantMapped_groupVariant.pdf
-mv RatioVariantMapped_Stacked.pdf /Data/results/analysis/Legacy/RatioVariantMapped_Stacked.pdf
+#mkdir /Data/results/analysis/Legacy
+#mv CountVariant_groupped_byVariant.pdf /Data/results/analysis/Legacy/CountVariantMapped_groupped_byVariant.pdf
+#mv CountVariant_groupSample.pdf /Data/results/analysis/Legacy/CountVariantMapped_groupSample.pdf
+#mv *tMash*.pdf /Data/results/analysis/Legacy
+#mv VariantMappedReads.xlsx /Data/results/analysis/Legacy
+#mv AF_lineages.xlsx /Data/results/analysis/Legacy/VariantMashReads.xlsx
+#mv RatioVariant_groupSample.pdf /Data/results/analysis/Legacy/RatioVariantMapped_groupSample.pdf
+#mv RatioVariant_groupVariant.pdf /Data/results/analysis/Legacy/RatioVariantMapped_groupVariant.pdf
+#mv RatioVariantMapped_Stacked.pdf /Data/results/analysis/Legacy/RatioVariantMapped_Stacked.pdf
 
 mkdir /Data/results/analysis/Widgets 
 mv /Data/results/analysis/analysis*.html /Data/results/analysis/Widgets
@@ -203,16 +212,16 @@ mv /Data/results/*_voc_depth.csv /Data/results/QC
 
 
 mv /Data/results/analysis/Clade_Barplot.pdf /Data/results/QC
-mv /Data/results/analysis/CountVariant_groupped_byVariant.pdf /Data/results/analysis/CountVariantMapped_byVariant.pdf
-mv /Data/results/analysis/CountVariant_groupSample.pdf /Data/results/analysis/CountVariantMapped_bySample.pdf 
+#mv /Data/results/analysis/CountVariant_groupped_byVariant.pdf /Data/results/analysis/CountVariantMapped_byVariant.pdf
+#mv /Data/results/analysis/CountVariant_groupSample.pdf /Data/results/analysis/CountVariantMapped_bySample.pdf 
 mv /Data/results/analysis/CoverageMosaic.pdf /Data/results/QC
 mv /Data/results/analysis/NoiseMosaic.pdf /Data/results/QC
 mv /Data/results/analysis/Pangolin_Barplot.pdf /Data/results/QC
-mv /Data/results/analysis/RatioVariant_groupSample.pdf /Data/results/analysis/RatioVariantMapped_bySample.pdf
-mv /Data/results/analysis/RatioVariant_groupVariant.pdf /Data/results/analysis/RatioVariantMapped_byVariant.pdf  
+#mv /Data/results/analysis/RatioVariant_groupSample.pdf /Data/results/analysis/RatioVariantMapped_bySample.pdf
+#mv /Data/results/analysis/RatioVariant_groupVariant.pdf /Data/results/analysis/RatioVariantMapped_byVariant.pdf  
 mv /Data/results/analysis/ReferencesSpike.fasta /Data/results/QC
 mv /Data/results/analysis/Variants.nextclade /Data/results/QC
-mv /Data/results/*AF.lineages.csv /Data/results/QC
+#mv /Data/results/*AF.lineages.csv /Data/results/QC
 mv /Data/results/*.gz /Data/results/QC
 mv /Data/results/*read_length.txt /Data/results/QC
 mv /Data/results/*.pdf /Data/results/analysis

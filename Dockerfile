@@ -58,6 +58,7 @@ RUN rm /usr/bin/gcc /usr/bin/gcc-ar /usr/bin/gcc-nm /usr/bin/gcc-ranlib \
     && ln /usr/bin/gcc-10 /usr/bin/gcc \
     && ln /usr/bin/gcc-ranlib-10 /usr/bin/gcc-ranlib 
 RUN Rscript -e "install.packages('uwot')"
+RUN Rscript -e "install.packages(c('lubridate','stringr'))"
 RUN mkdir -p /Data /home/docker/CommonFiles
 COPY CommonFiles/ /home/docker/CommonFiles/
 RUN chmod -R +rwx /home/docker/CommonFiles/* \

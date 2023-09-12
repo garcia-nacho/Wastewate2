@@ -182,6 +182,18 @@ mv *_consensus.qual.txt /Data/results/QC
 mv *_read_length.txt /Data/results/QC 
 mv *pdf /Data/results/QC
 
+#Kmer search
+
+if (( ${10} != "0"))
+then
+Rscript /home/docker/CommonFiles/Tools/KmerSearchDockerParallel.R ${10} 
+rm -rf kmeruncompressed
+mkdir KmerSearch
+mv ExtractedKmer KmerSearch/
+mv KmerSearchBarplot.pdf KmerSearch/KmerSearchBarplot.pdf  
+done
+
+
 Rscript /home/docker/CommonFiles/Tools/ParallelBamExtraction.R ${2} ${3} ${4} ${9}
 
 mv *.html analysis

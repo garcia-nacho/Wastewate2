@@ -963,18 +963,47 @@ write_xlsx(voc.agg, "MutationLineages.xlsx")
 
 
 #Mutation Plot
-Mutation.df<-Mutation.df[-which(Mutation.df$Sample=="Reference.b2f.tsv"),]
-Mutation.df$Mutation<-gsub("\\.1$","",Mutation.df$Mutation)
-if(length(grep("\\*$", Mutation.df$Mutation))>0) Mutation.df<-Mutation.df[-grep("\\*$", Mutation.df$Mutation),]
-Mutation.df.agg<-aggregate(Count~Mutation+Sample, Mutation.df, sum)
-Mutation.df.total<-aggregate(Count~Sample, pango.df, sum)
-Mutation.df.total<-Mutation.df.total[-which(Mutation.df.total$Sample=="Reference.b2f.tsv"),]
-colnames(Mutation.df.total)[2]<-"TotalCount"
-Mutation.df.agg<-merge(Mutation.df.agg, Mutation.df.total, by="Sample")
-Mutation.df.agg$Ratio<-Mutation.df.agg$Count/Mutation.df.agg$TotalCount
-Mutation.df.agg$Position<-as.numeric(gsub("^.","",gsub(".$","",gsub("S:","",Mutation.df.agg$Mutation))))
-Mutation.df.agg$AApos<-gsub(".$","",Mutation.df.agg$Mutation)
-Mutation.df.agg$Mutation<-gsub(".*[0-9]+","",Mutation.df.agg$Mutation)
+# Mutation.df<-Mutation.df[-which(Mutation.df$Sample=="Reference.b2f.tsv"),]
+# Mutation.df$Mutation<-gsub("\\.1$","",Mutation.df$Mutation)
+# if(length(grep("\\*$", Mutation.df$Mutation))>0) Mutation.df<-Mutation.df[-grep("\\*$", Mutation.df$Mutation),]
+# Mutation.df.agg<-aggregate(Count~Mutation+Sample, Mutation.df, sum)
+# Mutation.df.total<-aggregate(Count~Sample, pango.df, sum)
+# Mutation.df.total<-Mutation.df.total[-which(Mutation.df.total$Sample=="Reference.b2f.tsv"),]
+# colnames(Mutation.df.total)[2]<-"TotalCount"
+# Mutation.df.agg<-merge(Mutation.df.agg, Mutation.df.total, by="Sample")
+# Mutation.df.agg$Ratio<-Mutation.df.agg$Count/Mutation.df.agg$TotalCount
+# Mutation.df.agg$Position<-as.numeric(gsub("^.","",gsub(".$","",gsub("S:","",Mutation.df.agg$Mutation))))
+# Mutation.df.agg$AApos<-gsub(".$","",Mutation.df.agg$Mutation)
+# Mutation.df.agg$Mutation<-gsub(".*[0-9]+","",Mutation.df.agg$Mutation)
+
+
+lineages.clean$Mut.aa<-gsub("\\*","Star", lineages.clean$Mut.aa)
+muts<-unique(unlist(base::strsplit(lineages.clean$Mut.aa,"/")))
+if(length(which(is.na(muts)))>0) muts<-muts[-which(is.na(muts))]
+df.total.agg<- aggregate(Count~ Sample, lineages.clean, sum)
+colnames(df.total.agg)[2]<-"TotalCount"
+
+
+for (i in 1:length(muts)) {
+  df.agg<-aggregate(Count ~ Sample,  df[grep(muts[i], lineages.clean$Mut.aa),] ,sum  )
+  df.agg$Mutation<-muts[i]
+  
+  df.agg<-merge(df.agg, df.total.agg, by="Sample",all.x = TRUE)
+  df.agg$Ratio<-df.agg$Count/df.agg$TotalCount
+  
+  if(!exists("df.out")){
+    df.out<-df.agg
+  }else{
+    df.out<-rbind(df.out, df.agg)
+  }
+  
+}
+df.out$AApos<-gsub(".$","",df.out$Mutation)
+df.out$AApos<-gsub("Sta$","",df.out$AApos)
+df.out$Mutation<-gsub(".*[0-9]","",df.out$Mutation)
+if(length(which(df.out$Mutation=="Star"))>0) df.out$Mutation[which(df.out$Mutation=="Star")]<-"*"
+Mutation.df.agg <- df.out
+
 
 #Plotting single mutations
 if(length(unique(Mutation.df.agg$Sample))<=10){
@@ -985,8 +1014,7 @@ if(length(unique(Mutation.df.agg$Sample))<=10){
     scale_fill_manual(values = rainbow(length(unique(Mutation.df.agg$Mutation))))+
     theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))+
     xlab("Position Spike")+
-    ylab("Ratio mutant reads")+
-    ylim(0,1)
+    ylab("Ratio mutant reads")
   ggsave(paste(path,"SingleMutationsBarplots.pdf",sep = "") ,width =  8.27, height =  11.69)
 }
 
@@ -1009,8 +1037,7 @@ if(length(unique(Mutation.df.agg$Sample))>10){
       scale_fill_manual(values = rainbow(length(unique(Mutation.df.agg$Mutation))))+
       theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))+
       xlab("Position Spike")+
-      ylab("Ratio mutant reads")+
-      ylim(0,1)
+      ylab("Ratio mutant reads")
     
     ggsave(paste("SingleMutationsBarplots_part",counter, ".pdf",sep = "") ,width =  8.27, height =  11.69)
     start<-stop+1

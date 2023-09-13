@@ -94,13 +94,15 @@ Read filter by a quality of 10:
 Noise cut-off change to 0.1:       
 <code>docker run -it --rm -e noise=0.1 -v $(pwd):/Data ghcr.io/garcia-nacho/wastewater:v1.1 </code>
 
-Change the read size to allow reads between 100 and 2000nt 
+Change the read size to allow reads between 100 and 2000nt    
 <code>docker run -it --rm -e m=100 -e M=2000 -v $(pwd):/Data wastewater </code>   
 
-Look into mutations of the BA.2.86 variant and use the previous results included in the directory WWDB
-<code>docker run -it --rm -v WWDB:/Previous -v $(pwd):/Data -e poi='G22895C,T22896A,G22898A,A22910G,C22916T,G23012A,C23013A,T23018C,T23019C,C23271T,C23423T,A23604G' ghcr.io/garcia-nacho/wastewater:v1.1</code>
+Look into mutations of the BA.2.86 variant and use the previous results included in the directory WWDB   
+<code>docker run -it --rm -v WWDB:/Previous -v $(pwd):/Data \ 
+-e poi='G22895C,T22896A,G22898A,A22910G,C22916T,G23012A,C23013A,T23018C,T23019C,C23271T,C23423T,A23604G' \ 
+ghcr.io/garcia-nacho/wastewater:v1.1</code>
 
-Look into a kmer specific from the BA.2.86 variant and use the previous results included in the directory WWDB
+Look into a kmer specific from the BA.2.86 variant and use the previous results included in the directory WWDB   
 <code>docker run -it --rm -v WWDB:/Previous -v $(pwd):/Data -e kmer='TAAGCATAGTG' ghcr.io/garcia-nacho/wastewater:v1.1</code>
 
 

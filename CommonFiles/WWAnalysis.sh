@@ -146,7 +146,7 @@ do
     mv *_consensus.qual.txt /home/docker/results/${dir%/}_consensus.qual.txt 
     mv ${dir%/}_consensus.fa /home/docker/results/${dir%/}_consensus.fa
     mv spike.cons.aligned.fa /home/docker/results/${dir%/}_spike.cons.aligned.fa
-    mv ${dir%/}_voc_depth.csv /home/docker/results/${dir%/}_voc_depth.csv    
+    #mv ${dir%/}_voc_depth.csv /home/docker/results/${dir%/}_voc_depth.csv    
 
     rm dummy.csv
     rm Rplots.pdf
@@ -183,15 +183,16 @@ mv *_read_length.txt /Data/results/QC
 mv *pdf /Data/results/QC
 
 #Kmer search
-
-if (( ${10} != "0"))
+if [[ ${10} != "0" ]]
 then
+
 Rscript /home/docker/CommonFiles/Tools/KmerSearchDockerParallel.R ${10} 
 rm -rf kmeruncompressed
 mkdir KmerSearch
 mv ExtractedKmer KmerSearch/
 mv KmerSearchBarplot.pdf KmerSearch/KmerSearchBarplot.pdf  
-done
+
+fi
 
 
 Rscript /home/docker/CommonFiles/Tools/ParallelBamExtraction.R ${2} ${3} ${4} ${9}
@@ -220,7 +221,7 @@ mkdir /Data/results/analysis/SingleMutations
 mv *SingleMutation* /Data/results/analysis/SingleMutations
 
 mv /Data/VariantSpike.fasta /Data/results/analysis/ReferencesSpike.fasta
-mv /Data/results/*_voc_depth.csv /Data/results/QC
+#mv /Data/results/*_voc_depth.csv /Data/results/QC
 
 
 mv /Data/results/analysis/Clade_Barplot.pdf /Data/results/QC

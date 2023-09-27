@@ -962,6 +962,8 @@ for (i in 1:length(mutsofint)) {
 write_xlsx(voc.agg, "MutationLineages.xlsx")
 
 
+#Error 27 sept 2023
+
 #Mutation Plot
 # Mutation.df<-Mutation.df[-which(Mutation.df$Sample=="Reference.b2f.tsv"),]
 # Mutation.df$Mutation<-gsub("\\.1$","",Mutation.df$Mutation)
@@ -985,7 +987,7 @@ colnames(df.total.agg)[2]<-"TotalCount"
 
 
 for (i in 1:length(muts)) {
-  df.agg<-aggregate(Count ~ Sample,  df[grep(muts[i], lineages.clean$Mut.aa),] ,sum  )
+  df.agg<-aggregate(Count ~ Sample,  lineages.clean[grep(muts[i], lineages.clean$Mut.aa),] ,sum  )
   df.agg$Mutation<-muts[i]
   
   df.agg<-merge(df.agg, df.total.agg, by="Sample",all.x = TRUE)

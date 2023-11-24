@@ -116,6 +116,3 @@ ggplot(df.out)+
 ggsave("KmerSearchBarplot.pdf" ,width = 20, height = 16)
 
 
-
-
-ggsave("KmerSearchBarplot.pdf" ,width = 20, height = 16)

@@ -41,8 +41,8 @@ for (i in 1:length(poi)) {
       
       #Include penalty
         
-     dummym[k,j]<-   (P.L_M * P.L) /((P.L_M * P.L)+(AP.L_M * AP.L))
-     #dummym[k,j]<-   P.L_M
+     #dummym[k,j]<-   (P.L_M * P.L) /((P.L_M * P.L)+(AP.L_M * AP.L))
+     dummym[k,j]<-   P.L_M / (P.L_M + AP.L_M)
     }
   }
   dummym<-as.data.frame(dummym)

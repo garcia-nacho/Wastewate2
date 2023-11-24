@@ -119,10 +119,10 @@ do
     #cp /home/docker/CommonFiles/Tools/mash ./mash
     
     #seqkit fq2fa ${dir%/}.filtered.fastq -o ${dir%/}.uncompressed.fasta
-    #rm ${dir%/}.filtered.fastq
+    rm ${dir%/}.filtered.fastq
     
     #Rscript /home/docker/CommonFiles/Tools/MashRunner_V2.R
-    #mv ${dir%/}_read_length.txt /home/docker/results/${dir%/}_read_length.txt
+    mv ${dir%/}_read_length.txt /home/docker/results/${dir%/}_read_length.txt
     #mv ${dir%/}_AF.lineages.csv /home/docker/results/${dir%/}_AF.lineages.csv
     #rm ${dir%/}.uncompressed.fasta
     #rm ./mash
@@ -151,6 +151,7 @@ do
     rm dummy.csv
     rm Rplots.pdf
     rm spike.cons*
+    rm 
     cd ${basedir}  
     fi
 
@@ -183,19 +184,10 @@ mv *_read_length.txt /Data/results/QC
 mv *pdf /Data/results/QC
 
 #Kmer search
-if [[ ${10} != "0" ]]
-then
-
-Rscript /home/docker/CommonFiles/Tools/KmerSearchDockerParallel.R ${10} 
-rm -rf kmeruncompressed
-mkdir KmerSearch
-mv ExtractedKmer KmerSearch/
-mv KmerSearchBarplot.pdf KmerSearch/KmerSearchBarplot.pdf  
-
-fi
 
 
-Rscript /home/docker/CommonFiles/Tools/ParallelBamExtraction.R ${2} ${3} ${4} ${9}
+
+Rscript /home/docker/CommonFiles/Tools/ParallelBamExtraction.R ${2} ${3} ${4} ${9} ${11}
 
 mv *.html analysis
 mv *Sankeyplot.Mutations.pdf analysis/SankeyPlots
@@ -215,7 +207,7 @@ mv *Sankeyplot.Mutations.pdf analysis/SankeyPlots
 #mv RatioVariantMapped_Stacked.pdf /Data/results/analysis/Legacy/RatioVariantMapped_Stacked.pdf
 
 mkdir /Data/results/analysis/Widgets 
-mv /Data/results/analysis/analysis*.html /Data/results/analysis/Widgets
+mv /Data/results/analysis/*.html /Data/results/analysis/Widgets
 
 mkdir /Data/results/analysis/SingleMutations
 mv *SingleMutation* /Data/results/analysis/SingleMutations
@@ -245,4 +237,21 @@ rm /Data/results/MSAFastas
 
 mkdir /Data/results/WWDB
 mv /Data/results/MSAFastas/* /Data/results/WWDB
+rm -rf mv /Data/results/MSAFastas/
 cp /Data/results/QC/*noise.tsv /Data/results/WWDB
+
+if [[ ${10} != "0" ]]
+then
+
+cd /Data/results
+Rscript /home/docker/CommonFiles/Tools/KmerSearchDockerParallel.R ${10} 
+rm -rf kmeruncompressed
+mv ExtractedKmer analysis/KmerSearch/
+mkdir /Data/results/sequences/KmerSeqs
+mv ExtractedKmer analysis/KmerSearch/
+mv analysis/KmerSearch/* sequences/KmerSeqs
+
+mv KmerSearchBarplot.pdf analysis/KmerSearch/KmerSearchBarplot.pdf  
+mv KmerSearchResults.xlsx analysis/KmerSearch/KmerSearchResults.xlsx  
+
+fi

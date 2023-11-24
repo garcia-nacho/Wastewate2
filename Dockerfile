@@ -66,5 +66,6 @@ RUN chmod -R +rwx /home/docker/CommonFiles/* \
 USER docker
 WORKDIR /Data
 ENV kmer="0"
-CMD ["sh", "-c", "/home/docker/CommonFiles/WWAnalysis.sh ${qual} ${noise} ${start} ${end} ${m} ${M} ${mode} ${trim} ${poi} ${kmer}"]
+ENV mem="high_mem"
+CMD ["sh", "-c", "/home/docker/CommonFiles/WWAnalysis.sh ${qual} ${noise} ${start} ${end} ${m} ${M} ${mode} ${trim} ${poi} ${kmer} ${mem}"]
 #USER root

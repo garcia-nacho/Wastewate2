@@ -22,7 +22,7 @@ ref<-unlist(ref)
 dir.create("kmeruncompressed")
 
 for (i in 1:length(compressed)) {
-  target.file<-gsub(".*/","kmeruncompressed/",gsub(".gz","",compressed[cf]))
+  target.file<-gsub(".*/","kmeruncompressed/",gsub(".gz","",compressed[i]))
   if(file.exists(target.file)) file.remove(target.file)
   system(paste("gunzip -c ", compressed[i], " > ",target.file,sep = ""))
 }
@@ -74,7 +74,7 @@ for (k in 1:length(kmer)) {
 df.out$Sample<-gsub(".*/","",df.out$files)
 df.out$Sample<-gsub(".sorted.*","",df.out$Sample)
 
-writexs(df.out, "KmerSearchResults.xlsx")
+write_xlsx(df.out, "KmerSearchResults.xlsx")
 
 df.out$Location<-gsub(".*_","",df.out$Sample)
 df.out$Week<-gsub("_.*","",df.out$Sample)
@@ -90,4 +90,4 @@ ggplot(df.out)+
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))+
   ylab("Ratio")
 
-ggsave(Kmer)
+ggsave("KmerSearchResult.pdf")
